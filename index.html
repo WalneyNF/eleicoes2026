@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eleições 2026 - Painel de Análise | v1.0.0</title>
+<title>Eleições 2026 - Painel de Análise | v1.1.0</title>
+<meta name="description" content="Painel independente de análise de dados eleitorais 2026. Dados públicos do TSE em tempo real: Presidente, Governador, Senador, Deputados. Por Walney Moreira Klein.">
+<meta property="og:title" content="Eleições 2026 - Painel de Análise">
+<meta property="og:description" content="Acompanhe a apuração das Eleições 2026 com dados públicos do TSE. Análises, filtros e exportação de dados.">
+<meta property="og:url" content="https://walneynf.github.io/eleicoes2026/">
+<meta property="og:type" content="website">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.0/index.css">
@@ -12,8 +17,6 @@
     --verde-br: #009739;
     --amarelo-br: #FFDF00;
     --azul-br: #002776;
-    --verde-escuro: #006B2B;
-    --azul-escuro: #001A4D;
   }
   * { font-family: 'Inter', sans-serif; }
   body {
@@ -23,22 +26,11 @@
   }
   .glass { background: rgba(255,255,255,0.06); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
   .glass-light { background: rgba(255,255,255,0.97); backdrop-filter: blur(12px); }
-  .gradient-text {
-    background: linear-gradient(135deg, #FFDF00, #FFB800);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .gradient-green {
-    background: linear-gradient(135deg, #009739, #00B847);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+  .gradient-text { background: linear-gradient(135deg, #FFDF00, #FFB800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .gradient-green { background: linear-gradient(135deg, #009739, #00B847); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   .candidate-row { transition: all 0.2s; }
   .candidate-row:hover { background: rgba(255,223,0,0.08); transform: translateX(4px); }
-  .bar-fill {
-    transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-    background: linear-gradient(90deg, #009739, #FFDF00);
-  }
+  .bar-fill { transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1); background: linear-gradient(90deg, #009739, #FFDF00); }
   .winner-glow { box-shadow: 0 0 30px rgba(255,223,0,0.3); }
   .pulse-dot { animation: pulse 2s infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -46,18 +38,10 @@
   .scroll-area::-webkit-scrollbar { width: 8px; }
   .scroll-area::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
   .scroll-area::-webkit-scrollbar-thumb { background: #FFDF00; border-radius: 4px; }
-  .stat-card {
-    background: linear-gradient(135deg, rgba(0,151,57,0.15), rgba(255,223,0,0.08));
-    border: 1px solid rgba(255,223,0,0.25);
-  }
+  .stat-card { background: linear-gradient(135deg, rgba(0,151,57,0.15), rgba(255,223,0,0.08)); border: 1px solid rgba(255,223,0,0.25); }
   .uf-chip, .cargo-chip, .filter-chip, .initial-chip { transition: all 0.15s; cursor: pointer; user-select: none; }
   .uf-chip:hover, .cargo-chip:hover, .filter-chip:hover, .initial-chip:hover { transform: scale(1.05); }
-  .uf-chip.active, .cargo-chip.active, .filter-chip.active, .initial-chip.active {
-    background: linear-gradient(135deg, #FFDF00, #FFB800);
-    color: #002776;
-    font-weight: 700;
-    border-color: #FFDF00;
-  }
+  .uf-chip.active, .cargo-chip.active, .filter-chip.active, .initial-chip.active { background: linear-gradient(135deg, #FFDF00, #FFB800); color: #002776; font-weight: 700; border-color: #FFDF00; }
   .region-card { transition: all 0.2s; cursor: pointer; }
   .region-card:hover { transform: translateY(-2px); border-color: #FFDF00; }
   .candidate-photo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,223,0,0.4); flex-shrink: 0; }
@@ -70,86 +54,44 @@
   .log-warn { color: #fbbf24; }
   .party-card { transition: all 0.2s; }
   .party-card:hover { transform: translateY(-2px); border-color: #FFDF00; }
-  .initial-separator {
-    background: linear-gradient(90deg, rgba(0,151,57,0.25), transparent);
-    border-left: 4px solid #009739;
-  }
+  .initial-separator { background: linear-gradient(90deg, rgba(0,151,57,0.25), transparent); border-left: 4px solid #009739; }
   .highlight { background: rgba(255,223,0,0.5); color: #002776; padding: 0 3px; border-radius: 2px; font-weight: 700; }
   .party-bar { transition: width 0.8s ease-out; }
-  .btn-primary {
-    background: linear-gradient(135deg, #FFDF00, #FFB800);
-    color: #002776;
-    font-weight: 700;
-    transition: all 0.2s;
-  }
+  .btn-primary { background: linear-gradient(135deg, #FFDF00, #FFB800); color: #002776; font-weight: 700; transition: all 0.2s; }
   .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,223,0,0.3); }
-  .btn-green {
-    background: linear-gradient(135deg, #009739, #00B847);
-    color: white;
-    font-weight: 700;
-    transition: all 0.2s;
-  }
+  .btn-green { background: linear-gradient(135deg, #009739, #00B847); color: white; font-weight: 700; transition: all 0.2s; }
   .btn-green:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,151,57,0.3); }
-  .btn-outline {
-    background: transparent;
-    border: 1px solid rgba(255,223,0,0.4);
-    color: #FFDF00;
-    transition: all 0.2s;
-  }
+  .btn-outline { background: transparent; border: 1px solid rgba(255,223,0,0.4); color: #FFDF00; transition: all 0.2s; }
   .btn-outline:hover { background: rgba(255,223,0,0.1); border-color: #FFDF00; }
   .elected-badge { background: linear-gradient(135deg, #009739, #00B847); }
-  .flag-stripe {
-    height: 4px;
-    background: linear-gradient(90deg, #009739 0%, #009739 33%, #FFDF00 33%, #FFDF00 66%, #002776 66%, #002776 100%);
-  }
-  .diamond-logo {
-    width: 48px;
-    height: 48px;
-    background: #FFDF00;
-    position: relative;
-    transform: rotate(45deg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-  }
-  .diamond-logo::before {
-    content: '';
-    position: absolute;
-    inset: 6px;
-    background: #002776;
-    border-radius: 50%;
-  }
-  .diamond-logo span {
-    position: relative;
-    transform: rotate(-45deg);
-    font-size: 20px;
-    font-weight: 900;
-    color: #FFDF00;
-    z-index: 1;
-  }
-  .export-btn {
-    background: rgba(0,151,57,0.2);
-    border: 1px solid rgba(0,151,57,0.4);
-    color: #4ade80;
-    transition: all 0.2s;
-  }
+  .flag-stripe { height: 4px; background: linear-gradient(90deg, #009739 0%, #009739 33%, #FFDF00 33%, #FFDF00 66%, #002776 66%, #002776 100%); }
+  .diamond-logo { width: 48px; height: 48px; background: #FFDF00; position: relative; transform: rotate(45deg); display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+  .diamond-logo::before { content: ''; position: absolute; inset: 6px; background: #002776; border-radius: 50%; }
+  .diamond-logo span { position: relative; transform: rotate(-45deg); font-size: 20px; font-weight: 900; color: #FFDF00; z-index: 1; }
+  .export-btn { background: rgba(0,151,57,0.2); border: 1px solid rgba(0,151,57,0.4); color: #4ade80; transition: all 0.2s; }
   .export-btn:hover { background: rgba(0,151,57,0.3); border-color: #009739; }
-  .disclaimer-box {
-    background: linear-gradient(135deg, rgba(255,223,0,0.08), rgba(0,151,57,0.05));
-    border: 1px solid rgba(255,223,0,0.2);
-  }
+  .disclaimer-box { background: linear-gradient(135deg, rgba(255,223,0,0.08), rgba(0,151,57,0.05)); border: 1px solid rgba(255,223,0,0.2); }
   .footer-link { transition: color 0.2s; }
   .footer-link:hover { color: #FFDF00; }
-  .section-divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,223,0,0.3), transparent);
+  .section-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,223,0,0.3), transparent); }
+  .share-btn { transition: all 0.2s; }
+  .share-btn:hover { transform: translateY(-3px); }
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #009739, #00B847);
+    color: white; padding: 12px 24px; border-radius: 12px;
+    font-weight: 600; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    animation: slideUp 0.3s ease-out;
   }
+  @keyframes slideUp {
+    from { transform: translate(-50%, 100px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+  }
+  .menu-dot { width: 4px; height: 4px; background: currentColor; border-radius: 50%; }
 </style>
 </head>
 <body>
 
-<!-- Faixa da bandeira no topo -->
 <div class="flag-stripe"></div>
 
 <div class="container mx-auto px-4 py-8 max-w-7xl">
@@ -168,14 +110,58 @@
           <p class="text-slate-300 mt-1 text-sm md:text-base">Painel de Análise de Dados • Fonte: TSE</p>
         </div>
       </div>
-      <div class="flex items-center gap-3 flex-wrap">
-        <span class="text-xs text-slate-400 px-3 py-1 glass rounded-full">v1.0.0</span>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs text-slate-400 px-3 py-1 glass rounded-full">v1.1.0</span>
         <div class="live-indicator px-4 py-2 rounded-full flex items-center gap-2">
           <span class="w-2 h-2 bg-white rounded-full pulse-dot"></span>
           <span class="text-sm font-bold">AO VIVO</span>
         </div>
         <div class="flex items-center gap-2 glass px-4 py-2 rounded-full">
           <span class="text-sm text-slate-300" id="lastUpdate">--</span>
+        </div>
+        <!-- Menu de Ações -->
+        <div class="relative">
+          <button onclick="toggleMenu()" class="glass hover:bg-white/10 px-3 py-2 rounded-full flex items-center gap-2 transition-all">
+            <span class="text-sm font-bold">⋮</span>
+            <span class="text-sm hidden sm:inline">Menu</span>
+          </button>
+          <div id="actionMenu" class="hidden absolute right-0 mt-2 w-64 glass rounded-xl shadow-2xl overflow-hidden z-40 border border-white/10">
+            <button onclick="openShareModal()" class="w-full text-left px-4 py-3 hover:bg-white/10 flex items-center gap-3 transition-all">
+              <span class="text-xl">📢</span>
+              <div>
+                <p class="font-bold text-sm">Compartilhar</p>
+                <p class="text-xs text-slate-400">Divulgar nas redes sociais</p>
+              </div>
+            </button>
+            <button onclick="openAboutModal()" class="w-full text-left px-4 py-3 hover:bg-white/10 flex items-center gap-3 transition-all border-t border-white/5">
+              <span class="text-xl">ℹ️</span>
+              <div>
+                <p class="font-bold text-sm">Sobre o Projeto</p>
+                <p class="text-xs text-slate-400">Informações e créditos</p>
+              </div>
+            </button>
+            <button onclick="openFeaturesModal()" class="w-full text-left px-4 py-3 hover:bg-white/10 flex items-center gap-3 transition-all border-t border-white/5">
+              <span class="text-xl">✨</span>
+              <div>
+                <p class="font-bold text-sm">Recursos</p>
+                <p class="text-xs text-slate-400">O que este painel oferece</p>
+              </div>
+            </button>
+            <button onclick="openChangelogModal()" class="w-full text-left px-4 py-3 hover:bg-white/10 flex items-center gap-3 transition-all border-t border-white/5">
+              <span class="text-xl">📝</span>
+              <div>
+                <p class="font-bold text-sm">Novidades v1.1.0</p>
+                <p class="text-xs text-slate-400">O que mudou nesta versão</p>
+              </div>
+            </button>
+            <a href="https://github.com/walneynf/eleicoes2026" target="_blank" class="block px-4 py-3 hover:bg-white/10 flex items-center gap-3 transition-all border-t border-white/5">
+              <span class="text-xl">🐙</span>
+              <div>
+                <p class="font-bold text-sm">GitHub</p>
+                <p class="text-xs text-slate-400">Código fonte do projeto</p>
+              </div>
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -200,21 +186,21 @@
   </div>
 
   <!-- Ações rápidas -->
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
     <button onclick="loadDemoData()" class="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all">
       <p class="text-2xl mb-1">🎭</p>
       <p class="font-bold text-amber-400">Modo Demo</p>
-      <p class="text-xs text-slate-400">Dados de exemplo (offline)</p>
+      <p class="text-xs text-slate-400">Dados de exemplo</p>
     </button>
     <button onclick="loadAllData()" class="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all border border-amber-500/30">
       <p class="text-2xl mb-1">🚀</p>
       <p class="font-bold">Carregar Tudo</p>
-      <p class="text-xs text-slate-400">Todos os cargos e estados</p>
+      <p class="text-xs text-slate-400">Todos os cargos/UFs</p>
     </button>
     <button onclick="openPasteModal()" class="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all">
       <p class="text-2xl mb-1">📋</p>
       <p class="font-bold">Colar JSON</p>
-      <p class="text-xs text-slate-400">Importar manualmente</p>
+      <p class="text-xs text-slate-400">Importar manual</p>
     </button>
     <button onclick="exportAllData()" class="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all border border-green-500/30">
       <p class="text-2xl mb-1">💾</p>
@@ -272,10 +258,10 @@
     <div id="logPanel" class="scroll-area max-h-64 overflow-y-auto text-xs space-y-1 bg-black/30 rounded p-2"></div>
   </div>
 
-  <!-- Tabs de Cargo/UF -->
+  <!-- Tabs -->
   <div id="cargoTabs" class="space-y-3 mb-6 hidden"></div>
 
-  <!-- Painel de Filtros de Candidatos -->
+  <!-- Filtros de Candidatos -->
   <div id="candidateFilters" class="hidden glass rounded-2xl p-6 mb-6">
     <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
       🔎 <span>Filtros de Candidatos</span>
@@ -339,7 +325,6 @@
         </button>
       </div>
 
-      <!-- Resumo Geral -->
       <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
         <div class="stat-card rounded-lg p-3">
           <p class="text-xs text-slate-400">Fontes</p>
@@ -363,21 +348,15 @@
         </div>
       </div>
 
-      <!-- Gráficos de Análise -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
-        <div class="bg-white rounded-xl p-4">
-          <p class="text-sm font-bold text-slate-700 mb-2">🥧 Distribuição de Eleitos por Partido</p>
-          <canvas id="electedPieChart" height="220"></canvas>
-        </div>
-        <div class="bg-white rounded-xl p-4">
-          <p class="text-sm font-bold text-slate-700 mb-2">🌎 Votos por Região</p>
-          <canvas id="regionChart" height="220"></canvas>
-        </div>
+      <!-- Ranking de Eleitos por Partido (substitui o gráfico bugado) -->
+      <div class="bg-white rounded-xl p-4 mb-4">
+        <p class="text-sm font-bold text-slate-700 mb-3">🏆 Ranking de Partidos com Mais Eleitos</p>
+        <div id="electedRanking" class="space-y-2"></div>
       </div>
 
-      <!-- Top 10 Nacional -->
+      <!-- Top 10 -->
       <div class="bg-white rounded-xl p-4">
-        <p class="text-sm font-bold text-slate-700 mb-3">🏆 Top 10 Candidatos Mais Votados (considerando filtro atual)</p>
+        <p class="text-sm font-bold text-slate-700 mb-3">🌟 Top 10 Candidatos Mais Votados</p>
         <div id="top10List" class="space-y-2"></div>
       </div>
     </div>
@@ -474,6 +453,9 @@
         <p class="text-xs text-slate-400 leading-relaxed">
           Projeto independente de visualização e análise de dados eleitorais públicos.
         </p>
+        <button onclick="openShareModal()" class="btn-outline px-3 py-1.5 rounded-lg text-xs mt-3">
+          📢 Compartilhar este projeto
+        </button>
       </div>
 
       <div>
@@ -482,7 +464,7 @@
         <a href="mailto:walneyk@hotmail.com" class="footer-link text-sm text-slate-300 flex items-center gap-2 mt-1">
           📧 walneyk@hotmail.com
         </a>
-        <p class="text-xs text-slate-500 mt-2">Versão 1.0.0 • Outubro 2026</p>
+        <p class="text-xs text-slate-500 mt-2">Versão 1.1.0 • Outubro 2026</p>
       </div>
 
       <div>
@@ -494,9 +476,7 @@
           <span class="px-2 py-1 bg-white/5 rounded">JavaScript</span>
           <span class="px-2 py-1 bg-white/5 rounded">API TSE</span>
         </div>
-        <p class="text-xs text-slate-500 mt-3">
-          Hospedado no GitHub Pages
-        </p>
+        <p class="text-xs text-slate-500 mt-3">Hospedado no GitHub Pages</p>
       </div>
     </div>
 
@@ -507,8 +487,261 @@
       <p>Dados públicos fornecidos pelo <strong class="text-amber-300">Tribunal Superior Eleitoral (TSE)</strong></p>
     </div>
   </div>
-</div>
+</footer>
 <div class="flag-stripe"></div>
+
+<!-- ============ MODAIS ============ -->
+
+<!-- Modal Compartilhar -->
+<div id="shareModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="glass-light text-slate-900 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-2xl font-bold flex items-center gap-2">📢 Compartilhar Projeto</h3>
+      <button onclick="closeShareModal()" class="text-2xl text-slate-500 hover:text-slate-900">✕</button>
+    </div>
+    <p class="text-sm text-slate-600 mb-4">Ajude a divulgar este projeto independente! Compartilhe nas redes sociais:</p>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
+      <button onclick="shareWhatsApp()" class="share-btn bg-green-500 hover:bg-green-600 text-white rounded-xl p-4 text-center">
+        <div class="text-3xl mb-1">💬</div>
+        <p class="font-bold text-sm">WhatsApp</p>
+      </button>
+      <button onclick="shareFacebook()" class="share-btn bg-blue-600 hover:bg-blue-700 text-white rounded-xl p-4 text-center">
+        <div class="text-3xl mb-1">📘</div>
+        <p class="font-bold text-sm">Facebook</p>
+      </button>
+      <button onclick="shareTwitter()" class="share-btn bg-slate-900 hover:bg-black text-white rounded-xl p-4 text-center">
+        <div class="text-3xl mb-1">🐦</div>
+        <p class="font-bold text-sm">Twitter / X</p>
+      </button>
+      <button onclick="shareTelegram()" class="share-btn bg-sky-500 hover:bg-sky-600 text-white rounded-xl p-4 text-center">
+        <div class="text-3xl mb-1">✈️</div>
+        <p class="font-bold text-sm">Telegram</p>
+      </button>
+      <button onclick="shareLinkedIn()" class="share-btn bg-blue-700 hover:bg-blue-800 text-white rounded-xl p-4 text-center">
+        <div class="text-3xl mb-1">💼</div>
+        <p class="font-bold text-sm">LinkedIn</p>
+      </button>
+      <button onclick="shareEmail()" class="share-btn bg-red-500 hover:bg-red-600 text-white rounded-xl p-4 text-center">
+        <div class="text-3xl mb-1">📧</div>
+        <p class="font-bold text-sm">E-mail</p>
+      </button>
+    </div>
+
+    <div class="border-t border-slate-200 pt-4">
+      <p class="text-xs font-semibold text-slate-700 mb-2">🔗 COPIAR LINK</p>
+      <div class="flex gap-2">
+        <input type="text" id="shareLink" value="https://walneynf.github.io/eleicoes2026/" readonly 
+               class="flex-1 px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm font-mono">
+        <button onclick="copyLink()" class="btn-primary px-4 py-2 rounded-lg text-sm">📋 Copiar</button>
+      </div>
+    </div>
+
+    <div class="border-t border-slate-200 pt-4 mt-4">
+      <p class="text-xs font-semibold text-slate-700 mb-2">📝 TEXTO PARA DIVULGAÇÃO</p>
+      <textarea id="shareText" rows="6" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-xs font-mono">🗳️ Conheça o "Eleições 2026 - Painel de Análise"!
+
+Um projeto independente e gratuito para acompanhar a apuração das Eleições 2026 com dados públicos do TSE em tempo real.
+
+✨ Recursos:
+• Presidente, Governador, Senador, Dep. Federal e Estadual
+• Filtros por cargo, estado, região e partido
+• Busca inteligente por nome
+• Agrupamento por inicial (A-Z)
+• Filtro de eleitos/não eleitos
+• Totalizadores por partido
+• Exportação de dados em JSON
+• Fotos oficiais dos candidatos
+• Análises avançadas e rankings
+
+🔗 Acesse: https://walneynf.github.io/eleicoes2026/
+
+💻 Projeto open source: https://github.com/walneynf/eleicoes2026
+
+Desenvolvido por Walney Moreira Klein
+#Eleições2026 #TSE #DadosPúblicos #Brasil</textarea>
+      <button onclick="copyShareText()" class="btn-green px-4 py-2 rounded-lg text-sm mt-2 w-full">📋 Copiar Texto de Divulgação</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Sobre -->
+<div id="aboutModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="glass-light text-slate-900 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-2xl font-bold flex items-center gap-2">ℹ️ Sobre o Projeto</h3>
+      <button onclick="closeAboutModal()" class="text-2xl text-slate-500 hover:text-slate-900">✕</button>
+    </div>
+
+    <div class="space-y-4 text-sm text-slate-700">
+      <div class="bg-gradient-to-br from-amber-50 to-green-50 rounded-xl p-4 border border-amber-200">
+        <p class="font-bold text-amber-800 mb-2">🎯 O que é este projeto?</p>
+        <p class="leading-relaxed">
+          O <strong>Eleições 2026 - Painel de Análise</strong> é uma aplicação web independente desenvolvida 
+          para visualizar, filtrar e analisar os dados oficiais de apuração das Eleições 2026, consumindo 
+          diretamente a API pública do Tribunal Superior Eleitoral (TSE).
+        </p>
+      </div>
+
+      <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+        <p class="font-bold text-blue-800 mb-2">👨‍💻 Desenvolvedor</p>
+        <p class="font-bold">Walney Moreira Klein</p>
+        <p class="text-xs text-slate-600 mt-1">📧 walneyk@hotmail.com</p>
+        <p class="text-xs text-slate-600">🐙 github.com/walneynf</p>
+      </div>
+
+      <div class="bg-green-50 rounded-xl p-4 border border-green-200">
+        <p class="font-bold text-green-800 mb-2">📡 Fontes de Dados</p>
+        <p class="text-xs mb-2">Este projeto utiliza <strong>exclusivamente</strong> duas fontes oficiais:</p>
+        <ul class="text-xs space-y-1 ml-4 list-disc">
+          <li><strong>API de Resultados do TSE:</strong> dados de apuração em tempo real</li>
+          <li><strong>API de Fotos do TSE:</strong> fotos oficiais dos candidatos</li>
+        </ul>
+        <p class="text-xs mt-2 text-slate-600"><strong>Não consultamos</strong> portais de notícias, institutos de pesquisa, partidos políticos ou qualquer outra fonte externa.</p>
+      </div>
+
+      <div class="bg-red-50 rounded-xl p-4 border border-red-200">
+        <p class="font-bold text-red-800 mb-2">⚠️ Aviso Importante</p>
+        <p class="text-xs leading-relaxed">
+          Este é um projeto <strong>pessoal e independente</strong>. <strong>Não possui qualquer vínculo</strong> 
+          com o TSE, Justiça Eleitoral, partidos políticos ou candidatos. Todos os dados exibidos são de 
+          domínio público e fornecidos oficialmente pelo TSE.
+        </p>
+      </div>
+
+      <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+        <p class="font-bold text-slate-800 mb-2">🛠️ Tecnologias Utilizadas</p>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="px-2 py-1 bg-white rounded border">HTML5</span>
+          <span class="px-2 py-1 bg-white rounded border">Tailwind CSS</span>
+          <span class="px-2 py-1 bg-white rounded border">Chart.js</span>
+          <span class="px-2 py-1 bg-white rounded border">JavaScript (Vanilla)</span>
+          <span class="px-2 py-1 bg-white rounded border">GitHub Pages</span>
+        </div>
+      </div>
+
+      <div class="bg-purple-50 rounded-xl p-4 border border-purple-200">
+        <p class="font-bold text-purple-800 mb-2">📜 Licença</p>
+        <p class="text-xs">
+          Projeto de uso livre e educacional. © 2026 Walney Moreira Klein. 
+          Código fonte disponível no GitHub para consulta e aprendizado.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Recursos -->
+<div id="featuresModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="glass-light text-slate-900 rounded-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-2xl font-bold flex items-center gap-2">✨ Recursos do Painel</h3>
+      <button onclick="closeFeaturesModal()" class="text-2xl text-slate-500 hover:text-slate-900">✕</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border border-amber-200">
+        <p class="text-2xl mb-2">🗳️</p>
+        <p class="font-bold text-slate-800">Dados em Tempo Real</p>
+        <p class="text-xs text-slate-600 mt-1">Apuração ao vivo direto da API do TSE, atualizada automaticamente.</p>
+      </div>
+      <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+        <p class="text-2xl mb-2">📋</p>
+        <p class="font-bold text-slate-800">Todos os Cargos</p>
+        <p class="text-xs text-slate-600 mt-1">Presidente, Governador, Senador, Dep. Federal, Dep. Estadual e Dep. Distrital.</p>
+      </div>
+      <div class="bg-gradient-to-br from-blue-50 to-sky-50 rounded-xl p-4 border border-blue-200">
+        <p class="text-2xl mb-2">🗺️</p>
+        <p class="font-bold text-slate-800">Filtros por Região</p>
+        <p class="text-xs text-slate-600 mt-1">Norte, Nordeste, Centro-Oeste, Sudeste e Sul — ou selecione UFs individuais.</p>
+      </div>
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+        <p class="text-2xl mb-2">🔍</p>
+        <p class="font-bold text-slate-800">Busca Inteligente</p>
+        <p class="text-xs text-slate-600 mt-1">Pesquise por qualquer parte do nome, partido, número ou coligação.</p>
+      </div>
+      <div class="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-4 border border-red-200">
+        <p class="text-2xl mb-2">🔤</p>
+        <p class="font-bold text-slate-800">Agrupamento A-Z</p>
+        <p class="text-xs text-slate-600 mt-1">Ideal para 700+ deputados: agrupa por inicial do nome com contagem.</p>
+      </div>
+      <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-4 border border-teal-200">
+        <p class="text-2xl mb-2">🏆</p>
+        <p class="font-bold text-slate-800">Filtro de Eleitos</p>
+        <p class="text-xs text-slate-600 mt-1">Veja apenas candidatos eleitos ou não eleitos com um clique.</p>
+      </div>
+      <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border border-orange-200">
+        <p class="text-2xl mb-2">🏛️</p>
+        <p class="font-bold text-slate-800">Totalizadores por Partido</p>
+        <p class="text-xs text-slate-600 mt-1">Ranking completo de partidos com votos, eleitos e porcentagens.</p>
+      </div>
+      <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200">
+        <p class="text-2xl mb-2">💾</p>
+        <p class="font-bold text-slate-800">Exportação JSON</p>
+        <p class="text-xs text-slate-600 mt-1">Exporte dados completos, listas filtradas ou análises em JSON.</p>
+      </div>
+      <div class="bg-gradient-to-br from-lime-50 to-green-50 rounded-xl p-4 border border-lime-200">
+        <p class="text-2xl mb-2">📸</p>
+        <p class="font-bold text-slate-800">Fotos dos Candidatos</p>
+        <p class="text-xs text-slate-600 mt-1">Fotos oficiais diretamente da API do TSE para cada candidato.</p>
+      </div>
+      <div class="bg-gradient-to-br from-fuchsia-50 to-pink-50 rounded-xl p-4 border border-fuchsia-200">
+        <p class="text-2xl mb-2">📈</p>
+        <p class="font-bold text-slate-800">Análises Avançadas</p>
+        <p class="text-xs text-slate-600 mt-1">Rankings, top 10, estatísticas por partido e gráficos interativos.</p>
+      </div>
+      <div class="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-4 border border-yellow-200">
+        <p class="text-2xl mb-2">📊</p>
+        <p class="font-bold text-slate-800">Ordenação Flexível</p>
+        <p class="text-xs text-slate-600 mt-1">Ordene por votos, porcentagem, nome, partido ou número.</p>
+      </div>
+      <div class="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200">
+        <p class="text-2xl mb-2">📱</p>
+        <p class="font-bold text-slate-800">100% Responsivo</p>
+        <p class="text-xs text-slate-600 mt-1">Funciona perfeitamente em celular, tablet e desktop.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Changelog -->
+<div id="changelogModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="glass-light text-slate-900 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-2xl font-bold flex items-center gap-2">📝 Novidades da v1.1.0</h3>
+      <button onclick="closeChangelogModal()" class="text-2xl text-slate-500 hover:text-slate-900">✕</button>
+    </div>
+
+    <div class="space-y-3">
+      <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+        <p class="font-bold text-green-800 mb-2">🆕 v1.1.0 — Outubro 2026</p>
+        <ul class="text-xs space-y-1 ml-4 list-disc text-slate-700">
+          <li>✅ <strong>Menu de ações</strong> no header (⋮) com acesso rápido</li>
+          <li>✅ <strong>Compartilhamento social</strong>: WhatsApp, Facebook, Twitter/X, Telegram, LinkedIn e E-mail</li>
+          <li>✅ <strong>Texto de divulgação</strong> pronto para copiar e compartilhar</li>
+          <li>✅ <strong>Modal "Sobre o Projeto"</strong> com informações completas</li>
+          <li>✅ <strong>Modal "Recursos"</strong> com todos os 12 recursos do painel</li>
+          <li>✅ <strong>Correção de bugs</strong> nos gráficos de análise</li>
+          <li>✅ <strong>Ranking de partidos</strong> substitui gráfico bugado (mais claro e funcional)</li>
+          <li>✅ <strong>Metatags Open Graph</strong> para melhor compartilhamento</li>
+          <li>✅ <strong>Toast de feedback</strong> ao copiar links/textos</li>
+        </ul>
+      </div>
+
+      <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+        <p class="font-bold text-slate-800 mb-2">🎉 v1.0.0 — Lançamento Inicial</p>
+        <ul class="text-xs space-y-1 ml-4 list-disc text-slate-700">
+          <li>Consumo de dados oficiais do TSE</li>
+          <li>Filtros por cargo, região, UF</li>
+          <li>Busca inteligente e agrupamento A-Z</li>
+          <li>Totalizadores por partido</li>
+          <li>Exportação em JSON</li>
+          <li>Fotos oficiais dos candidatos</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Modal Colar JSON -->
 <div id="pasteModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -538,6 +771,11 @@
 
 <script>
 // ============ CONFIGURAÇÃO ============
+const PROJECT_URL = 'https://walneynf.github.io/eleicoes2026/';
+const VERSION = '1.1.0';
+const AUTHOR = 'Walney Moreira Klein';
+const AUTHOR_EMAIL = 'walneyk@hotmail.com';
+
 const ELEICOES = {
   presidente:   { id: '6257', pad: '006257', cargo: 'c0001', nome: 'Presidente',         scope: 'br' },
   governador:   { id: '6259', pad: '006259', cargo: 'c0003', nome: 'Governador',         scope: 'uf' },
@@ -563,9 +801,6 @@ const CORS_PROXIES = [
   (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
 ];
 
-const VERSION = '1.0.0';
-const AUTHOR = 'Walney Moreira Klein';
-
 // ============ ESTADO ============
 let selectedCargos = new Set(['presidente', 'governador', 'senador', 'depFederal', 'depEstadual']);
 let selectedUfs = new Set(['BR', 'RJ', 'SP', 'MG']);
@@ -580,8 +815,6 @@ let groupBy = 'none';
 let partySortOrder = 'votes';
 let chartInstances = [];
 let partyChartInstance = null;
-let pieChartInstance = null;
-let regionChartInstance = null;
 let searchDebounce = null;
 
 // ============ INICIALIZAÇÃO ============
@@ -591,9 +824,127 @@ document.addEventListener('DOMContentLoaded', () => {
   renderUfChips();
   updateSelectionCount();
   console.log(`%c🗳️ Eleições 2026 - Painel de Análise v${VERSION}`, 'color: #FFDF00; font-size: 16px; font-weight: bold;');
-  console.log(`%cDesenvolvido por ${AUTHOR} - walneyk@hotmail.com`, 'color: #009739; font-size: 12px;');
+  console.log(`%cDesenvolvido por ${AUTHOR} - ${AUTHOR_EMAIL}`, 'color: #009739; font-size: 12px;');
 });
 
+// Fechar menu ao clicar fora
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('actionMenu');
+  const btn = e.target.closest('button[onclick="toggleMenu()"]');
+  if (!btn && !menu.contains(e.target)) {
+    menu.classList.add('hidden');
+  }
+});
+
+// ============ MENU DE AÇÕES ============
+function toggleMenu() {
+  document.getElementById('actionMenu').classList.toggle('hidden');
+}
+
+// ============ MODAIS ============
+function openShareModal() {
+  document.getElementById('actionMenu').classList.add('hidden');
+  document.getElementById('shareModal').classList.remove('hidden');
+}
+function closeShareModal() { document.getElementById('shareModal').classList.add('hidden'); }
+
+function openAboutModal() {
+  document.getElementById('actionMenu').classList.add('hidden');
+  document.getElementById('aboutModal').classList.remove('hidden');
+}
+function closeAboutModal() { document.getElementById('aboutModal').classList.add('hidden'); }
+
+function openFeaturesModal() {
+  document.getElementById('actionMenu').classList.add('hidden');
+  document.getElementById('featuresModal').classList.remove('hidden');
+}
+function closeFeaturesModal() { document.getElementById('featuresModal').classList.add('hidden'); }
+
+function openChangelogModal() {
+  document.getElementById('actionMenu').classList.add('hidden');
+  document.getElementById('changelogModal').classList.remove('hidden');
+}
+function closeChangelogModal() { document.getElementById('changelogModal').classList.add('hidden'); }
+
+function openPasteModal() { document.getElementById('pasteModal').classList.remove('hidden'); }
+function closePasteModal() {
+  document.getElementById('pasteModal').classList.add('hidden');
+  document.getElementById('pasteJson').value = '';
+  document.getElementById('pasteName').value = '';
+  document.getElementById('pasteUf').value = '';
+}
+
+// ============ TOAST ============
+function showToast(message) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+// ============ COMPARTILHAMENTO ============
+function getShareText() {
+  return `🗳️ Eleições 2026 - Painel de Análise\n\nAcompanhe a apuração em tempo real com dados públicos do TSE!\n\n✨ Filtros por cargo, estado, partido\n🔍 Busca inteligente\n🏆 Ranking de eleitos\n💾 Exportação em JSON\n\n🔗 ${PROJECT_URL}`;
+}
+
+function shareWhatsApp() {
+  const url = `https://wa.me/?text=${encodeURIComponent(getShareText())}`;
+  window.open(url, '_blank');
+}
+
+function shareFacebook() {
+  const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(PROJECT_URL)}&quote=${encodeURIComponent('🗳️ Acompanhe a apuração das Eleições 2026 com dados públicos do TSE!')}`;
+  window.open(url, '_blank');
+}
+
+function shareTwitter() {
+  const text = '🗳️ Acompanhe a apuração das #Eleicoes2026 com dados públicos do TSE! Painel independente com filtros, análises e exportação. #TSE #Brasil';
+  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(PROJECT_URL)}`;
+  window.open(url, '_blank');
+}
+
+function shareTelegram() {
+  const url = `https://t.me/share/url?url=${encodeURIComponent(PROJECT_URL)}&text=${encodeURIComponent('🗳️ Eleições 2026 - Painel de Análise com dados públicos do TSE')}`;
+  window.open(url, '_blank');
+}
+
+function shareLinkedIn() {
+  const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(PROJECT_URL)}`;
+  window.open(url, '_blank');
+}
+
+function shareEmail() {
+  const subject = '🗳️ Eleições 2026 - Painel de Análise';
+  const body = `Olá!\n\nGostaria de compartilhar com você este projeto independente para acompanhar as Eleições 2026:\n\n${PROJECT_URL}\n\nRecursos:\n• Dados oficiais do TSE em tempo real\n• Filtros por cargo, estado, região e partido\n• Busca inteligente e agrupamento A-Z\n• Totalizadores por partido\n• Exportação de dados em JSON\n• Fotos oficiais dos candidatos\n\nDesenvolvido por Walney Moreira Klein\n${AUTHOR_EMAIL}`;
+  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function copyLink() {
+  const input = document.getElementById('shareLink');
+  input.select();
+  navigator.clipboard.writeText(input.value).then(() => {
+    showToast('✅ Link copiado!');
+  }).catch(() => {
+    document.execCommand('copy');
+    showToast('✅ Link copiado!');
+  });
+}
+
+function copyShareText() {
+  const textarea = document.getElementById('shareText');
+  textarea.select();
+  navigator.clipboard.writeText(textarea.value).then(() => {
+    showToast('✅ Texto de divulgação copiado!');
+  }).catch(() => {
+    document.execCommand('copy');
+    showToast('✅ Texto de divulgação copiado!');
+  });
+}
+
+// ============ FILTROS ============
 function renderCargoChips() {
   const container = document.getElementById('cargoChips');
   const cargos = [
@@ -690,7 +1041,6 @@ function updateSelectionCount() {
   document.getElementById('selectionCount').textContent = count;
 }
 
-// ============ FILTROS DE CANDIDATOS ============
 function setStatusFilter(status) {
   statusFilter = status;
   document.querySelectorAll('#statusFilters .filter-chip').forEach(btn => {
@@ -920,7 +1270,8 @@ function parseTSEData(json, meta) {
             vice: vice ? vice.nmu : null,
             viceNome: vice ? vice.nm : null,
             eleito: cand.e === 's', status: cand.st,
-            sqcand: cand.sqcand, fotoUrl
+            sqcand: cand.sqcand, fotoUrl,
+            uf: meta.uf // UF associada ao candidato
           });
         });
       });
@@ -1047,13 +1398,6 @@ function loadDemoData() {
 }
 
 // ============ COLAR JSON ============
-function openPasteModal() { document.getElementById('pasteModal').classList.remove('hidden'); }
-function closePasteModal() {
-  document.getElementById('pasteModal').classList.add('hidden');
-  document.getElementById('pasteJson').value = '';
-  document.getElementById('pasteName').value = '';
-  document.getElementById('pasteUf').value = '';
-}
 function processPastedJson() {
   const raw = document.getElementById('pasteJson').value.trim();
   const name = document.getElementById('pasteName').value.trim() || 'JSON Colado';
@@ -1081,15 +1425,14 @@ function downloadJSON(data, filename) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  showToast(`💾 Arquivo salvo: ${filename}`);
 }
 
 function exportAllData() {
   if (allParsedData.length === 0) { alert('Nenhum dado carregado para exportar'); return; }
   const exportData = {
     metadata: {
-      versao: VERSION,
-      autor: AUTHOR,
-      email: 'walneyk@hotmail.com',
+      versao: VERSION, autor: AUTHOR, email: AUTHOR_EMAIL,
       dataExportacao: new Date().toISOString(),
       fonte: 'API Oficial TSE - resultados.tse.jus.br',
       aviso: 'Projeto independente sem vínculo com TSE ou Justiça Eleitoral'
@@ -1097,15 +1440,8 @@ function exportAllData() {
     totalFontes: allParsedData.length,
     totalCandidatos: allParsedData.reduce((s, d) => s + d.candidates.length, 0),
     dados: allParsedData.map(d => ({
-      fonte: d.name,
-      uf: d.uf,
-      cargo: d.cargo,
-      atualizadoEm: d.infoHora,
-      estatisticas: {
-        secoes: d.secoes,
-        eleitorado: d.eleitorado,
-        votos: d.votos
-      },
+      fonte: d.name, uf: d.uf, cargo: d.cargo, atualizadoEm: d.infoHora,
+      estatisticas: { secoes: d.secoes, eleitorado: d.eleitorado, votos: d.votos },
       candidatos: d.candidates
     }))
   };
@@ -1119,11 +1455,8 @@ function exportCurrentList() {
   if (filtered.length === 0) { alert('Nenhum candidato para exportar'); return; }
   const exportData = {
     metadata: {
-      versao: VERSION,
-      autor: AUTHOR,
-      dataExportacao: new Date().toISOString(),
-      cargo: currentCargo,
-      uf: currentUf,
+      versao: VERSION, autor: AUTHOR, dataExportacao: new Date().toISOString(),
+      cargo: currentCargo, uf: currentUf,
       filtros: { status: statusFilter, busca: searchText, ordenacao: sortOrder },
       total: filtered.length
     },
@@ -1141,12 +1474,8 @@ function exportPartyData() {
   if (parties.length === 0) { alert('Nenhum dado para exportar'); return; }
   const exportData = {
     metadata: {
-      versao: VERSION,
-      autor: AUTHOR,
-      dataExportacao: new Date().toISOString(),
-      cargo: currentCargo,
-      uf: currentUf,
-      totalPartidos: parties.length
+      versao: VERSION, autor: AUTHOR, dataExportacao: new Date().toISOString(),
+      cargo: currentCargo, uf: currentUf, totalPartidos: parties.length
     },
     partidos: parties
   };
@@ -1157,15 +1486,11 @@ function exportPartyData() {
 function exportAnalysis() {
   const base = getBaseCandidates();
   const parties = calculatePartyTotals(base);
-  const regionData = calculateRegionData();
   const top10 = [...base].sort((a,b) => b.votos - a.votos).slice(0, 10);
   const exportData = {
     metadata: {
-      versao: VERSION,
-      autor: AUTHOR,
-      dataExportacao: new Date().toISOString(),
-      cargo: currentCargo,
-      uf: currentUf
+      versao: VERSION, autor: AUTHOR, dataExportacao: new Date().toISOString(),
+      cargo: currentCargo, uf: currentUf
     },
     resumo: {
       totalCandidatos: base.length,
@@ -1174,8 +1499,7 @@ function exportAnalysis() {
       totalVotos: base.reduce((s,c) => s + c.votos, 0)
     },
     top10Candidatos: top10,
-    partidos: parties,
-    regioes: regionData
+    partidos: parties
   };
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   downloadJSON(exportData, `analise_${currentCargo.toLowerCase().replace(/\s+/g,'_')}_${ts}.json`);
@@ -1186,8 +1510,6 @@ function renderCargoTabs() {
   chartInstances.forEach(c => c.destroy());
   chartInstances = [];
   if (partyChartInstance) { partyChartInstance.destroy(); partyChartInstance = null; }
-  if (pieChartInstance) { pieChartInstance.destroy(); pieChartInstance = null; }
-  if (regionChartInstance) { regionChartInstance.destroy(); regionChartInstance = null; }
   const cargos = [...new Set(allParsedData.map(d => d.cargo))];
   const ufs = [...new Set(allParsedData.map(d => d.uf))];
   if (!currentCargo || !cargos.includes(currentCargo)) currentCargo = cargos[0];
@@ -1430,29 +1752,7 @@ function renderPartyChart(parties) {
   });
 }
 
-// ============ ANÁLISES AVANÇADAS ============
-function getRegionOfUf(uf) {
-  for (const [nome, data] of Object.entries(REGIOES)) {
-    if (data.ufs.includes(uf)) return nome;
-  }
-  return 'Nacional';
-}
-
-function calculateRegionData() {
-  const base = getBaseCandidates();
-  const regions = {};
-  Object.keys(REGIOES).forEach(r => regions[r] = { votos: 0, candidatos: 0, eleitos: 0 });
-  regions['Nacional'] = { votos: 0, candidatos: 0, eleitos: 0 };
-  base.forEach(c => {
-    const region = getRegionOfUf(allParsedData.find(d => d.candidates.includes(c))?.uf || 'BR');
-    if (!regions[region]) regions[region] = { votos: 0, candidatos: 0, eleitos: 0 };
-    regions[region].votos += c.votos;
-    regions[region].candidatos++;
-    if (c.eleito) regions[region].eleitos++;
-  });
-  return regions;
-}
-
+// ============ ANÁLISES AVANÇADAS (CORRIGIDO) ============
 function renderAdvancedAnalysis(baseCandidates) {
   const panel = document.getElementById('advancedAnalysis');
   panel.classList.remove('hidden');
@@ -1469,78 +1769,43 @@ function renderAdvancedAnalysis(baseCandidates) {
   document.getElementById('anTotalParties').textContent = parties.length;
   document.getElementById('anTotalVotes').textContent = formatNumber(totalVotes);
 
-  // Pizza de eleitos por partido
-  renderElectedPieChart(parties);
-  // Votos por região
-  renderRegionChart();
+  // Ranking de partidos com eleitos (substitui gráfico bugado)
+  renderElectedRanking(parties);
   // Top 10
   renderTop10(baseCandidates);
 }
 
-function renderElectedPieChart(parties) {
-  const canvas = document.getElementById('electedPieChart');
-  if (!canvas) return;
-  if (pieChartInstance) pieChartInstance.destroy();
-  const elected = parties.filter(p => p.eleitos > 0).sort((a,b) => b.eleitos - a.eleitos).slice(0, 10);
+function renderElectedRanking(parties) {
+  const container = document.getElementById('electedRanking');
+  const elected = parties.filter(p => p.eleitos > 0).sort((a,b) => b.eleitos - a.eleitos || b.totalVotos - a.totalVotos);
+  
   if (elected.length === 0) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#64748b';
-    ctx.font = '14px Inter';
-    ctx.textAlign = 'center';
-    ctx.fillText('Nenhum eleito ainda', canvas.width/2, canvas.height/2);
+    container.innerHTML = '<p class="text-sm text-slate-500 text-center py-4">Nenhum candidato eleito ainda nesta seleção</p>';
     return;
   }
-  const colors = ['#009739', '#FFDF00', '#002776', '#00B847', '#FFB800', '#004DC8', '#4ade80', '#fbbf24', '#60a5fa', '#94a3b8'];
-  pieChartInstance = new Chart(canvas.getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: elected.map(p => p.sigla),
-      datasets: [{
-        data: elected.map(p => p.eleitos),
-        backgroundColor: colors,
-        borderColor: '#fff',
-        borderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'right', labels: { color: '#0f172a', font: { weight: 'bold', size: 11 } } },
-        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed} eleito(s)` } }
-      }
-    }
-  });
-}
 
-function renderRegionChart() {
-  const canvas = document.getElementById('regionChart');
-  if (!canvas) return;
-  if (regionChartInstance) regionChartInstance.destroy();
-  const regionData = calculateRegionData();
-  const regions = Object.entries(regionData).filter(([k,v]) => v.candidatos > 0 && k !== 'Nacional');
-  if (regions.length === 0) return;
-  const colors = { 'Norte': '#009739', 'Nordeste': '#FFDF00', 'Centro-Oeste': '#002776', 'Sudeste': '#00B847', 'Sul': '#FFB800' };
-  regionChartInstance = new Chart(canvas.getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: regions.map(([r]) => r),
-      datasets: [
-        { label: 'Votos', data: regions.map(([,d]) => d.votos), backgroundColor: regions.map(([r]) => colors[r] || '#009739'), borderRadius: 4 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: (ctx) => `Votos: ${formatNumber(ctx.parsed.y)}` } }
-      },
-      scales: {
-        y: { beginAtZero: true, ticks: { color: '#64748b', callback: v => formatNumber(v) }, grid: { color: 'rgba(0,0,0,0.05)' } },
-        x: { ticks: { color: '#0f172a', font: { weight: 'bold' } }, grid: { display: false } }
-      }
-    }
-  });
+  const maxElected = elected[0].eleitos;
+  container.innerHTML = elected.map((p, i) => {
+    const barWidth = (p.eleitos / maxElected * 100);
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span class="text-slate-500 font-bold">#${i+1}</span>`;
+    return `
+      <div class="flex items-center gap-3 p-2 rounded hover:bg-slate-50">
+        <div class="text-xl w-8 text-center">${medal}</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="font-black text-lg text-slate-800">${escapeHtml(p.sigla)}</span>
+            <span class="text-xs text-slate-500 truncate">${escapeHtml(p.nome)}</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-green-600 to-amber-400" style="width: ${barWidth}%"></div>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="font-black text-lg text-green-700">${p.eleitos}</p>
+          <p class="text-xs text-slate-500">eleito${p.eleitos > 1 ? 's' : ''}</p>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 function renderTop10(candidates) {
@@ -1555,11 +1820,11 @@ function renderTop10(candidates) {
     const pct = maxVotes > 0 ? (c.votos / maxVotes * 100) : 0;
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span class="text-slate-500 font-bold">#${i+1}</span>`;
     return `
-      <div class="flex items-center gap-3 p-2 rounded hover:bg-white/5">
+      <div class="flex items-center gap-3 p-2 rounded hover:bg-slate-50">
         <div class="text-xl w-8 text-center">${medal}</div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded text-xs font-bold">${c.numero}</span>
+            <span class="bg-amber-500/20 text-amber-700 px-2 py-0.5 rounded text-xs font-bold">${c.numero}</span>
             <span class="font-bold truncate text-slate-800">${escapeHtml(c.nomeUrna)}</span>
             <span class="text-xs text-slate-500">${escapeHtml(c.partido)}</span>
             ${c.eleito ? '<span class="elected-badge text-white px-2 py-0.5 rounded text-xs font-bold">✓</span>' : ''}
