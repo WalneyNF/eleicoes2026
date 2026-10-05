@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eleições 2026 - Painel de Análise | v1.0.0</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.0/index.css">
+<style>
+  :root {
+    --verde-br: #009739;
+    --amarelo-br: #FFDF00;
+    --azul-br: #002776;
+    --verde-escuro: #006B2B;
+    --azul-escuro: #001A4D;
+  }
+  * { font-family: 'Inter', sans-serif; }
+  body {
+    background: linear-gradient(135deg, #001A4D 0%, #002776 50%, #001A4D 100%);
+    min-height: 100vh;
+    color: #fff;
+  }
+  .glass { background: rgba(255,255,255,0.06); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+  .glass-light { background: rgba(255,255,255,0.97); backdrop-filter: blur(12px); }
+  .gradient-text {
+    background: linear-gradient(135deg, #FFDF00, #FFB800);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .gradient-green {
+    background: linear-gradient(135deg, #009739, #00B847);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .candidate-row { transition: all 0.2s; }
+  .candidate-row:hover { background: rgba(255,223,0,0.08); transform: translateX(4px); }
+  .bar-fill {
+    transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(90deg, #009739, #FFDF00);
+  }
+  .winner-glow { box-shadow: 0 0 30px rgba(255,223,0,0.3); }
+  .pulse-dot { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .tab-active { background: linear-gradient(135deg, #FFDF00, #FFB800); color: #002776; font-weight: 700; }
+  .scroll-area::-webkit-scrollbar { width: 8px; }
+  .scroll-area::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+  .scroll-area::-webkit-scrollbar-thumb { background: #FFDF00; border-radius: 4px; }
+  .stat-card {
+    background: linear-gradient(135deg, rgba(0,151,57,0.15), rgba(255,223,0,0.08));
+    border: 1px solid rgba(255,223,0,0.25);
+  }
+  .uf-chip, .cargo-chip, .filter-chip, .initial-chip { transition: all 0.15s; cursor: pointer; user-select: none; }
+  .uf-chip:hover, .cargo-chip:hover, .filter-chip:hover, .initial-chip:hover { transform: scale(1.05); }
+  .uf-chip.active, .cargo-chip.active, .filter-chip.active, .initial-chip.active {
+    background: linear-gradient(135deg, #FFDF00, #FFB800);
+    color: #002776;
+    font-weight: 700;
+    border-color: #FFDF00;
+  }
+  .region-card { transition: all 0.2s; cursor: pointer; }
+  .region-card:hover { transform: translateY(-2px); border-color: #FFDF00; }
+  .candidate-photo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,223,0,0.4); flex-shrink: 0; }
+  .candidate-photo-placeholder { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #009739, #002776); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #FFDF00; flex-shrink: 0; }
+  .live-indicator { background: linear-gradient(135deg, #009739, #00B847); }
+  .log-entry { font-family: 'Courier New', monospace; font-size: 11px; }
+  .log-ok { color: #4ade80; }
+  .log-err { color: #f87171; }
+  .log-info { color: #60a5fa; }
+  .log-warn { color: #fbbf24; }
+  .party-card { transition: all 0.2s; }
+  .party-card:hover { transform: translateY(-2px); border-color: #FFDF00; }
+  .initial-separator {
+    background: linear-gradient(90deg, rgba(0,151,57,0.25), transparent);
+    border-left: 4px solid #009739;
+  }
+  .highlight { background: rgba(255,223,0,0.5); color: #002776; padding: 0 3px; border-radius: 2px; font-weight: 700; }
+  .party-bar { transition: width 0.8s ease-out; }
+  .btn-primary {
+    background: linear-gradient(135deg, #FFDF00, #FFB800);
+    color: #002776;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,223,0,0.3); }
+  .btn-green {
+    background: linear-gradient(135deg, #009739, #00B847);
+    color: white;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .btn-green:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,151,57,0.3); }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255,223,0,0.4);
+    color: #FFDF00;
+    transition: all 0.2s;
+  }
+  .btn-outline:hover { background: rgba(255,223,0,0.1); border-color: #FFDF00; }
+  .elected-badge { background: linear-gradient(135deg, #009739, #00B847); }
+  .flag-stripe {
+    height: 4px;
+    background: linear-gradient(90deg, #009739 0%, #009739 33%, #FFDF00 33%, #FFDF00 66%, #002776 66%, #002776 100%);
+  }
+  .diamond-logo {
+    width: 48px;
+    height: 48px;
+    background: #FFDF00;
+    position: relative;
+    transform: rotate(45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  .diamond-logo::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    background: #002776;
+    border-radius: 50%;
+  }
+  .diamond-logo span {
+    position: relative;
+    transform: rotate(-45deg);
+    font-size: 20px;
+    font-weight: 900;
+    color: #FFDF00;
+    z-index: 1;
+  }
+  .export-btn {
+    background: rgba(0,151,57,0.2);
+    border: 1px solid rgba(0,151,57,0.4);
+    color: #4ade80;
+    transition: all 0.2s;
+  }
+  .export-btn:hover { background: rgba(0,151,57,0.3); border-color: #009739; }
+  .disclaimer-box {
+    background: linear-gradient(135deg, rgba(255,223,0,0.08), rgba(0,151,57,0.05));
+    border: 1px solid rgba(255,223,0,0.2);
+  }
+  .footer-link { transition: color 0.2s; }
+  .footer-link:hover { color: #FFDF00; }
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,223,0,0.3), transparent);
+  }
+</style>
+</head>
+<body>
+
+<!-- Faixa da bandeira no topo -->
+<div class="flag-stripe"></div>
+
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+  
+  <!-- Header -->
+  <header class="mb-6">
+    <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
+      <div class="flex items-center gap-4">
+        <div class="diamond-logo flex-shrink-0">
+          <span>26</span>
+        </div>
+        <div>
+          <h1 class="text-3xl md:text-5xl font-black">
+            <span class="gradient-text">Eleições 2026</span>
+          </h1>
+          <p class="text-slate-300 mt-1 text-sm md:text-base">Painel de Análise de Dados • Fonte: TSE</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <span class="text-xs text-slate-400 px-3 py-1 glass rounded-full">v1.0.0</span>
+        <div class="live-indicator px-4 py-2 rounded-full flex items-center gap-2">
+          <span class="w-2 h-2 bg-white rounded-full pulse-dot"></span>
+          <span class="text-sm font-bold">AO VIVO</span>
+        </div>
+        <div class="flex items-center gap-2 glass px-4 py-2 rounded-full">
+          <span class="text-sm text-slate-300" id="lastUpdate">--</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer-box rounded-xl p-4 mb-6">
+    <div class="flex items-start gap-3">
+      <span class="text-2xl">ℹ️</span>
+      <div class="flex-1">
+        <p class="font-bold text-amber-300 text-sm">Sobre este projeto</p>
+        <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+          Este é um <strong>projeto independente e pessoal</strong> que apenas <strong>consome dados públicos</strong> 
+          disponibilizados pela API oficial do <strong>Tribunal Superior Eleitoral (TSE)</strong> em 
+          <code class="bg-black/30 px-1 rounded">resultados.tse.jus.br</code>. 
+          <strong class="text-amber-300">Não possui qualquer vínculo, parceria ou relação oficial</strong> com o TSE, 
+          Justiça Eleitoral, partidos políticos ou candidatos. As fotos dos candidatos também são obtidas 
+          diretamente da API pública do TSE. Uso exclusivamente informativo e educacional.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ações rápidas -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+    <button onclick="loadDemoData()" class="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all">
+      <p class="text-2xl mb-1">🎭</p>
+      <p class="font-bold text-amber-400">Modo Demo</p>
+      <p class="text-xs text-slate-400">Dados de exemplo (offline)</p>
+    </button>
+    <button onclick="loadAllData()" class="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all border border-amber-500/30">
+      <p class="text-2xl mb-1">🚀</p>
+      <p class="font-bold">Carregar Tudo</p>
+      <p class="text-xs text-slate-400">Todos os cargos e estados</p>
+    </button>
+    <button onclick="openPasteModal()" class="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all">
+      <p class="text-2xl mb-1">📋</p>
+      <p class="font-bold">Colar JSON</p>
+      <p class="text-xs text-slate-400">Importar manualmente</p>
+    </button>
+    <button onclick="exportAllData()" class="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all border border-green-500/30">
+      <p class="text-2xl mb-1">💾</p>
+      <p class="font-bold text-green-400">Exportar Tudo</p>
+      <p class="text-xs text-slate-400">JSON completo</p>
+    </button>
+  </div>
+
+  <!-- Painel de Filtros -->
+  <section class="glass rounded-2xl p-6 mb-6">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+      <h2 class="text-xl font-bold flex items-center gap-2">
+        <span class="text-2xl">🎯</span> Filtros de Consulta
+      </h2>
+      <div class="flex gap-2">
+        <button onclick="selectAll()" class="text-xs px-3 py-1 glass rounded-full hover:bg-white/10">Selecionar todos</button>
+        <button onclick="deselectAll()" class="text-xs px-3 py-1 glass rounded-full hover:bg-white/10">Limpar</button>
+      </div>
+    </div>
+
+    <div class="mb-5">
+      <p class="text-sm text-slate-400 mb-2 font-semibold">📋 CARGOS</p>
+      <div class="flex flex-wrap gap-2" id="cargoChips"></div>
+    </div>
+
+    <div class="mb-5">
+      <p class="text-sm text-slate-400 mb-2 font-semibold">🗺️ REGIÕES</p>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-2" id="regionCards"></div>
+    </div>
+
+    <div class="mb-5">
+      <p class="text-sm text-slate-400 mb-2 font-semibold">📍 ESTADOS (UFs)</p>
+      <div class="flex flex-wrap gap-2" id="ufChips"></div>
+    </div>
+
+    <div class="flex items-center justify-between flex-wrap gap-3 pt-4 border-t border-white/10">
+      <div class="text-sm text-slate-400">
+        <span id="selectionCount" class="text-amber-400 font-bold">0</span> fonte(s) selecionada(s)
+      </div>
+      <button onclick="loadSelected()" class="btn-primary px-6 py-2 rounded-lg">
+        🚀 Carregar Selecionados
+      </button>
+    </div>
+  </section>
+
+  <!-- Progresso -->
+  <div id="progressPanel" class="hidden glass rounded-2xl p-4 mb-6">
+    <div class="flex items-center justify-between mb-2">
+      <p class="text-sm font-semibold">Carregando dados do TSE...</p>
+      <p class="text-sm text-amber-400" id="progressText">0/0</p>
+    </div>
+    <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden mb-3">
+      <div id="progressBar" class="bar-fill h-full" style="width: 0%"></div>
+    </div>
+    <div id="logPanel" class="scroll-area max-h-64 overflow-y-auto text-xs space-y-1 bg-black/30 rounded p-2"></div>
+  </div>
+
+  <!-- Tabs de Cargo/UF -->
+  <div id="cargoTabs" class="space-y-3 mb-6 hidden"></div>
+
+  <!-- Painel de Filtros de Candidatos -->
+  <div id="candidateFilters" class="hidden glass rounded-2xl p-6 mb-6">
+    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+      🔎 <span>Filtros de Candidatos</span>
+      <span id="candidateCount" class="text-sm font-normal text-slate-400 ml-2"></span>
+    </h3>
+
+    <div class="mb-4">
+      <label class="text-xs text-slate-400 mb-1 block">🔍 BUSCAR POR NOME, PARTIDO OU NÚMERO</label>
+      <div class="relative">
+        <input type="text" id="searchInput" oninput="handleSearch(this.value)" 
+               placeholder="Digite qualquer parte do nome, partido ou número..." 
+               class="w-full px-4 py-3 pl-10 bg-black/30 border border-white/10 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+        <span class="absolute left-3 top-3.5 text-slate-500">🔍</span>
+        <button onclick="clearSearch()" id="clearSearchBtn" class="hidden absolute right-3 top-2.5 px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-xs">✕ Limpar</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label class="text-xs text-slate-400 mb-2 block">🏆 STATUS</label>
+        <div class="flex flex-wrap gap-2" id="statusFilters">
+          <button onclick="setStatusFilter('all')" class="filter-chip px-3 py-1.5 glass rounded-lg border border-white/10 text-sm active" data-status="all">Todos</button>
+          <button onclick="setStatusFilter('elected')" class="filter-chip px-3 py-1.5 glass rounded-lg border border-white/10 text-sm" data-status="elected">✓ Eleitos</button>
+          <button onclick="setStatusFilter('not-elected')" class="filter-chip px-3 py-1.5 glass rounded-lg border border-white/10 text-sm" data-status="not-elected">✗ Não Eleitos</button>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-2 block">📊 ORDENAR POR</label>
+        <select id="sortSelect" onchange="setSortOrder(this.value)" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+          <option value="votes">Votos (maior → menor)</option>
+          <option value="percentage">Porcentagem</option>
+          <option value="name">Nome (A → Z)</option>
+          <option value="party">Partido (A → Z)</option>
+          <option value="number">Número (crescente)</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-2 block">🔤 AGRUPAR POR INICIAL</label>
+        <select id="groupBySelect" onchange="setGroupBy(this.value)" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+          <option value="none">Não agrupar</option>
+          <option value="initial">Agrupar por inicial (A-Z)</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="initialFilterPanel" class="hidden">
+      <label class="text-xs text-slate-400 mb-2 block">🔤 FILTRAR POR INICIAL DO NOME</label>
+      <div class="flex flex-wrap gap-1" id="initialChips"></div>
+    </div>
+  </div>
+
+  <!-- Análises Avançadas -->
+  <div id="advancedAnalysis" class="hidden mb-6">
+    <div class="glass rounded-2xl p-6">
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <h3 class="text-xl font-bold flex items-center gap-2">
+          📈 <span>Análises Avançadas</span>
+        </h3>
+        <button onclick="exportAnalysis()" class="export-btn px-3 py-1.5 rounded-lg text-xs font-bold">
+          💾 Exportar Análises (JSON)
+        </button>
+      </div>
+
+      <!-- Resumo Geral -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+        <div class="stat-card rounded-lg p-3">
+          <p class="text-xs text-slate-400">Fontes</p>
+          <p class="text-2xl font-bold text-amber-400" id="anTotalSources">0</p>
+        </div>
+        <div class="stat-card rounded-lg p-3">
+          <p class="text-xs text-slate-400">Candidatos</p>
+          <p class="text-2xl font-bold" id="anTotalCandidates">0</p>
+        </div>
+        <div class="stat-card rounded-lg p-3">
+          <p class="text-xs text-slate-400">Eleitos</p>
+          <p class="text-2xl font-bold text-green-400" id="anTotalElected">0</p>
+        </div>
+        <div class="stat-card rounded-lg p-3">
+          <p class="text-xs text-slate-400">Partidos</p>
+          <p class="text-2xl font-bold" id="anTotalParties">0</p>
+        </div>
+        <div class="stat-card rounded-lg p-3">
+          <p class="text-xs text-slate-400">Votos Válidos</p>
+          <p class="text-2xl font-bold" id="anTotalVotes">0</p>
+        </div>
+      </div>
+
+      <!-- Gráficos de Análise -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
+        <div class="bg-white rounded-xl p-4">
+          <p class="text-sm font-bold text-slate-700 mb-2">🥧 Distribuição de Eleitos por Partido</p>
+          <canvas id="electedPieChart" height="220"></canvas>
+        </div>
+        <div class="bg-white rounded-xl p-4">
+          <p class="text-sm font-bold text-slate-700 mb-2">🌎 Votos por Região</p>
+          <canvas id="regionChart" height="220"></canvas>
+        </div>
+      </div>
+
+      <!-- Top 10 Nacional -->
+      <div class="bg-white rounded-xl p-4">
+        <p class="text-sm font-bold text-slate-700 mb-3">🏆 Top 10 Candidatos Mais Votados (considerando filtro atual)</p>
+        <div id="top10List" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Totalizadores por Partido -->
+  <div id="partyTotals" class="hidden mb-6">
+    <div class="glass rounded-2xl p-6">
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <h3 class="text-xl font-bold flex items-center gap-2">
+          🏛️ <span>Totalizadores por Partido</span>
+        </h3>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="setPartySort('votes')" id="partySortVotes" class="px-3 py-1 bg-amber-500 text-slate-900 rounded text-xs font-bold">Por Votos</button>
+          <button onclick="setPartySort('elected')" id="partySortElected" class="px-3 py-1 glass rounded text-xs">Por Eleitos</button>
+          <button onclick="setPartySort('candidates')" id="partySortCandidates" class="px-3 py-1 glass rounded text-xs">Por Candidatos</button>
+          <button onclick="exportPartyData()" class="export-btn px-3 py-1 rounded text-xs font-bold">💾 Exportar</button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-4 mb-5">
+        <canvas id="partyChart" height="200"></canvas>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="partyCards"></div>
+    </div>
+  </div>
+
+  <!-- Resultados -->
+  <div id="results" class="space-y-6"></div>
+
+  <!-- Empty state -->
+  <div id="emptyState" class="glass rounded-2xl p-12 text-center">
+    <p class="text-6xl mb-4">🗳️</p>
+    <p class="text-2xl font-bold mb-2 gradient-text">Pronto para carregar</p>
+    <p class="text-slate-400 mb-4">Selecione filtros ou use <strong>Carregar Tudo</strong></p>
+    <button onclick="loadAllData()" class="btn-primary px-6 py-3 rounded-lg">
+      🚀 Carregar Todos os Dados
+    </button>
+  </div>
+
+  <div class="section-divider my-8"></div>
+
+  <!-- Fontes de Dados -->
+  <section class="glass rounded-2xl p-6 mb-6">
+    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+      📡 <span>Fontes de Dados Consultadas</span>
+    </h3>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-start gap-2">
+        <span class="text-green-400">✓</span>
+        <div>
+          <p class="font-semibold text-amber-300">API Oficial do TSE — Resultados</p>
+          <p class="text-xs text-slate-400 font-mono">https://resultados.tse.jus.br/oficial/ele2026/</p>
+          <p class="text-xs text-slate-400 mt-1">Dados de apuração em tempo real (candidatos, votos, seções, eleitorado)</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-2">
+        <span class="text-green-400">✓</span>
+        <div>
+          <p class="font-semibold text-amber-300">API Oficial do TSE — Fotos dos Candidatos</p>
+          <p class="text-xs text-slate-400 font-mono">https://resultados.tse.jus.br/oficial/ele2026/{eleicao}/fotos/{uf}/{sqcand}.jpeg</p>
+          <p class="text-xs text-slate-400 mt-1">Fotos oficiais dos candidatos disponibilizadas publicamente</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-2 mt-3 pt-3 border-t border-white/10">
+        <span class="text-amber-400">⚠️</span>
+        <p class="text-xs text-slate-400">
+          <strong class="text-slate-300">Nenhuma outra fonte é utilizada.</strong> Este projeto não consulta, 
+          não armazena e não possui qualquer relação com portais de notícias, institutos de pesquisa, 
+          partidos políticos ou candidatos. Todo dado exibido provém exclusivamente das APIs públicas do TSE.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Footer -->
+<div class="flag-stripe"></div>
+<footer class="bg-black/40 backdrop-blur-md border-t border-white/10 mt-8">
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="diamond-logo" style="width:36px;height:36px;">
+            <span style="font-size:14px;">26</span>
+          </div>
+          <div>
+            <p class="font-bold gradient-text">Eleições 2026</p>
+            <p class="text-xs text-slate-400">Painel de Análise</p>
+          </div>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Projeto independente de visualização e análise de dados eleitorais públicos.
+        </p>
+      </div>
+
+      <div>
+        <p class="font-bold text-amber-300 mb-2 text-sm">Desenvolvido por</p>
+        <p class="font-bold text-white">Walney Moreira Klein</p>
+        <a href="mailto:walneyk@hotmail.com" class="footer-link text-sm text-slate-300 flex items-center gap-2 mt-1">
+          📧 walneyk@hotmail.com
+        </a>
+        <p class="text-xs text-slate-500 mt-2">Versão 1.0.0 • Outubro 2026</p>
+      </div>
+
+      <div>
+        <p class="font-bold text-amber-300 mb-2 text-sm">Tecnologias</p>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="px-2 py-1 bg-white/5 rounded">HTML5</span>
+          <span class="px-2 py-1 bg-white/5 rounded">Tailwind CSS</span>
+          <span class="px-2 py-1 bg-white/5 rounded">Chart.js</span>
+          <span class="px-2 py-1 bg-white/5 rounded">JavaScript</span>
+          <span class="px-2 py-1 bg-white/5 rounded">API TSE</span>
+        </div>
+        <p class="text-xs text-slate-500 mt-3">
+          Hospedado no GitHub Pages
+        </p>
+      </div>
+    </div>
+
+    <div class="section-divider mb-4"></div>
+
+    <div class="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+      <p>© 2026 Walney Moreira Klein. Projeto de uso livre e educacional.</p>
+      <p>Dados públicos fornecidos pelo <strong class="text-amber-300">Tribunal Superior Eleitoral (TSE)</strong></p>
+    </div>
+  </div>
+</div>
+<div class="flag-stripe"></div>
+
+<!-- Modal Colar JSON -->
+<div id="pasteModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="glass-light text-slate-900 rounded-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+    <h3 class="text-2xl font-bold mb-2">Colar JSON do TSE</h3>
+    <div class="mb-4">
+      <label class="block text-sm font-semibold mb-1">Nome/Identificação</label>
+      <input id="pasteName" type="text" placeholder="Ex: Presidência BR" 
+             class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+    </div>
+    <div class="mb-4">
+      <label class="block text-sm font-semibold mb-1">UF (sigla do estado)</label>
+      <input id="pasteUf" type="text" placeholder="Ex: BR, SP, RJ" 
+             class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+    </div>
+    <div class="mb-4">
+      <label class="block text-sm font-semibold mb-1">JSON</label>
+      <textarea id="pasteJson" rows="12" placeholder='{"ele":"6257","carg":[...]}' 
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono text-xs"></textarea>
+    </div>
+    <div class="flex gap-2 justify-end">
+      <button onclick="closePasteModal()" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-semibold">Cancelar</button>
+      <button onclick="processPastedJson()" class="btn-primary px-5 py-2 rounded-lg">Processar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ CONFIGURAÇÃO ============
+const ELEICOES = {
+  presidente:   { id: '6257', pad: '006257', cargo: 'c0001', nome: 'Presidente',         scope: 'br' },
+  governador:   { id: '6259', pad: '006259', cargo: 'c0003', nome: 'Governador',         scope: 'uf' },
+  senador:      { id: '6259', pad: '006259', cargo: 'c0005', nome: 'Senador',            scope: 'uf' },
+  depFederal:   { id: '6259', pad: '006259', cargo: 'c0006', nome: 'Deputado Federal',   scope: 'uf' },
+  depEstadual:  { id: '6259', pad: '006259', cargo: 'c0007', nome: 'Deputado Estadual',  scope: 'uf' },
+  depDistrital: { id: '6259', pad: '006259', cargo: 'c0008', nome: 'Deputado Distrital', scope: 'df' }
+};
+
+const UFS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+
+const REGIOES = {
+  'Norte':        { ufs: ['AC','AM','AP','PA','RO','RR','TO'], emoji: '🌳' },
+  'Nordeste':     { ufs: ['AL','BA','CE','MA','PB','PE','PI','RN','SE'], emoji: '🏖️' },
+  'Centro-Oeste': { ufs: ['DF','GO','MS','MT'], emoji: '🌾' },
+  'Sudeste':      { ufs: ['ES','MG','RJ','SP'], emoji: '🏙️' },
+  'Sul':          { ufs: ['PR','RS','SC'], emoji: '🌲' }
+};
+
+const CORS_PROXIES = [
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
+];
+
+const VERSION = '1.0.0';
+const AUTHOR = 'Walney Moreira Klein';
+
+// ============ ESTADO ============
+let selectedCargos = new Set(['presidente', 'governador', 'senador', 'depFederal', 'depEstadual']);
+let selectedUfs = new Set(['BR', 'RJ', 'SP', 'MG']);
+let allParsedData = [];
+let currentCargo = null;
+let currentUf = 'ALL';
+let statusFilter = 'all';
+let sortOrder = 'votes';
+let searchText = '';
+let initialFilter = 'ALL';
+let groupBy = 'none';
+let partySortOrder = 'votes';
+let chartInstances = [];
+let partyChartInstance = null;
+let pieChartInstance = null;
+let regionChartInstance = null;
+let searchDebounce = null;
+
+// ============ INICIALIZAÇÃO ============
+document.addEventListener('DOMContentLoaded', () => {
+  renderCargoChips();
+  renderRegionCards();
+  renderUfChips();
+  updateSelectionCount();
+  console.log(`%c🗳️ Eleições 2026 - Painel de Análise v${VERSION}`, 'color: #FFDF00; font-size: 16px; font-weight: bold;');
+  console.log(`%cDesenvolvido por ${AUTHOR} - walneyk@hotmail.com`, 'color: #009739; font-size: 12px;');
+});
+
+function renderCargoChips() {
+  const container = document.getElementById('cargoChips');
+  const cargos = [
+    { key: 'presidente', label: '👔 Presidente', scope: 'BR' },
+    { key: 'governador', label: '🏛️ Governador', scope: 'UF' },
+    { key: 'senador', label: '🏢 Senador', scope: 'UF' },
+    { key: 'depFederal', label: '👥 Dep. Federal', scope: 'UF' },
+    { key: 'depEstadual', label: '🏠 Dep. Estadual', scope: 'UF' },
+    { key: 'depDistrital', label: '🏛️ Dep. Distrital', scope: 'DF' }
+  ];
+  container.innerHTML = cargos.map(c => `
+    <button onclick="toggleCargo('${c.key}')" 
+            class="cargo-chip px-4 py-2 glass rounded-full border border-white/10 text-sm ${selectedCargos.has(c.key) ? 'active' : 'text-slate-300'}">
+      ${c.label} <span class="text-xs opacity-60">(${c.scope})</span>
+    </button>
+  `).join('');
+}
+
+function renderRegionCards() {
+  const container = document.getElementById('regionCards');
+  container.innerHTML = Object.entries(REGIOES).map(([nome, data]) => `
+    <div onclick="toggleRegion('${nome}')" class="region-card glass rounded-xl p-3 border border-white/10">
+      <div class="text-2xl mb-1">${data.emoji}</div>
+      <p class="font-bold text-sm">${nome}</p>
+      <p class="text-xs text-slate-400">${data.ufs.length} UFs</p>
+    </div>
+  `).join('');
+}
+
+function renderUfChips() {
+  const container = document.getElementById('ufChips');
+  const allUfs = ['BR', ...UFS];
+  container.innerHTML = allUfs.map(uf => `
+    <button onclick="toggleUf('${uf}')" 
+            class="uf-chip px-3 py-1 glass rounded-lg border border-white/10 text-sm ${selectedUfs.has(uf) ? 'active' : 'text-slate-300'}">
+      ${uf === 'BR' ? '🇧🇷 BR' : uf}
+    </button>
+  `).join('');
+}
+
+function toggleCargo(key) {
+  if (selectedCargos.has(key)) selectedCargos.delete(key);
+  else selectedCargos.add(key);
+  renderCargoChips();
+  updateSelectionCount();
+}
+
+function toggleUf(uf) {
+  if (selectedUfs.has(uf)) selectedUfs.delete(uf);
+  else selectedUfs.add(uf);
+  renderUfChips();
+  updateSelectionCount();
+}
+
+function toggleRegion(region) {
+  const ufs = REGIOES[region].ufs;
+  const allSelected = ufs.every(u => selectedUfs.has(u));
+  if (allSelected) ufs.forEach(u => selectedUfs.delete(u));
+  else ufs.forEach(u => selectedUfs.add(u));
+  renderUfChips();
+  updateSelectionCount();
+}
+
+function selectAll() {
+  UFS.forEach(u => selectedUfs.add(u));
+  selectedUfs.add('BR');
+  Object.keys(ELEICOES).forEach(c => selectedCargos.add(c));
+  renderUfChips();
+  renderCargoChips();
+  updateSelectionCount();
+}
+
+function deselectAll() {
+  selectedUfs.clear();
+  selectedCargos.clear();
+  renderUfChips();
+  renderCargoChips();
+  updateSelectionCount();
+}
+
+function updateSelectionCount() {
+  let count = 0;
+  selectedCargos.forEach(c => {
+    const cfg = ELEICOES[c];
+    if (!cfg) return;
+    if (cfg.scope === 'br') {
+      if (selectedUfs.has('BR')) count += 1;
+    } else if (cfg.scope === 'df') {
+      if (selectedUfs.has('DF')) count += 1;
+    } else {
+      UFS.forEach(uf => { if (selectedUfs.has(uf)) count += 1; });
+    }
+  });
+  document.getElementById('selectionCount').textContent = count;
+}
+
+// ============ FILTROS DE CANDIDATOS ============
+function setStatusFilter(status) {
+  statusFilter = status;
+  document.querySelectorAll('#statusFilters .filter-chip').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.status === status);
+  });
+  renderResults();
+}
+
+function setSortOrder(order) {
+  sortOrder = order;
+  renderResults();
+}
+
+function setGroupBy(value) {
+  groupBy = value;
+  document.getElementById('initialFilterPanel').classList.toggle('hidden', value === 'none');
+  if (value === 'none') {
+    initialFilter = 'ALL';
+    renderInitialChips();
+  }
+  renderResults();
+}
+
+function handleSearch(value) {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    searchText = value.trim();
+    document.getElementById('clearSearchBtn').classList.toggle('hidden', !searchText);
+    renderResults();
+  }, 250);
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  searchText = '';
+  document.getElementById('clearSearchBtn').classList.add('hidden');
+  renderResults();
+}
+
+function setInitialFilter(initial) {
+  initialFilter = initial;
+  renderInitialChips();
+  renderResults();
+}
+
+function renderInitialChips() {
+  const container = document.getElementById('initialChips');
+  if (!container) return;
+  const baseCandidates = getBaseCandidates();
+  const initialsCount = {};
+  baseCandidates.forEach(c => {
+    const ch = c.nomeUrna.charAt(0).toUpperCase();
+    const key = /[A-Z]/.test(ch) ? ch : '#';
+    initialsCount[key] = (initialsCount[key] || 0) + 1;
+  });
+  const letters = Object.keys(initialsCount).sort((a, b) => {
+    if (a === '#') return 1;
+    if (b === '#') return -1;
+    return a.localeCompare(b);
+  });
+  let html = `<button onclick="setInitialFilter('ALL')" class="initial-chip px-2 py-1 glass rounded border border-white/10 text-xs ${initialFilter === 'ALL' ? 'active' : 'text-slate-300'}">
+    Todos <span class="opacity-60">(${baseCandidates.length})</span>
+  </button>`;
+  letters.forEach(letter => {
+    const label = letter === '#' ? '#/Outros' : letter;
+    html += `<button onclick="setInitialFilter('${letter}')" class="initial-chip px-2 py-1 glass rounded border border-white/10 text-xs ${initialFilter === letter ? 'active' : 'text-slate-300'}">
+      ${label} <span class="opacity-60">(${initialsCount[letter]})</span>
+    </button>`;
+  });
+  container.innerHTML = html;
+}
+
+function setPartySort(order) {
+  partySortOrder = order;
+  ['votes', 'elected', 'candidates'].forEach(o => {
+    const btn = document.getElementById(`partySort${o.charAt(0).toUpperCase() + o.slice(1)}`);
+    if (btn) {
+      if (o === order) btn.className = 'px-3 py-1 bg-amber-500 text-slate-900 rounded text-xs font-bold';
+      else btn.className = 'px-3 py-1 glass rounded text-xs';
+    }
+  });
+  renderPartyTotals(getBaseCandidates());
+}
+
+// ============ APLICAR FILTROS ============
+function getBaseCandidates() {
+  let filtered = allParsedData.filter(d => d.cargo === currentCargo);
+  if (currentUf !== 'ALL') filtered = filtered.filter(d => d.uf === currentUf);
+  return filtered.flatMap(d => d.candidates);
+}
+
+function applyFilters(candidates) {
+  let result = [...candidates];
+  if (statusFilter === 'elected') result = result.filter(c => c.eleito);
+  else if (statusFilter === 'not-elected') result = result.filter(c => !c.eleito);
+  if (searchText) {
+    const s = searchText.toLowerCase();
+    result = result.filter(c => 
+      c.nomeUrna.toLowerCase().includes(s) ||
+      c.nome.toLowerCase().includes(s) ||
+      c.partido.toLowerCase().includes(s) ||
+      c.numero.includes(s) ||
+      (c.coligacao && c.coligacao.toLowerCase().includes(s))
+    );
+  }
+  if (initialFilter !== 'ALL') {
+    result = result.filter(c => {
+      const ch = c.nomeUrna.charAt(0).toUpperCase();
+      const key = /[A-Z]/.test(ch) ? ch : '#';
+      return key === initialFilter;
+    });
+  }
+  result.sort((a, b) => {
+    switch(sortOrder) {
+      case 'votes': return b.votos - a.votos;
+      case 'percentage': return b.porcentagem - a.porcentagem;
+      case 'name': return a.nomeUrna.localeCompare(b.nomeUrna, 'pt-BR');
+      case 'party': return a.partido.localeCompare(b.partido) || b.votos - a.votos;
+      case 'number': return parseInt(a.numero) - parseInt(b.numero);
+    }
+    return 0;
+  });
+  return result;
+}
+
+function highlightText(text, search) {
+  if (!search) return escapeHtml(text);
+  const escaped = escapeHtml(text);
+  const searchEscaped = escapeHtml(search);
+  const regex = new RegExp(`(${searchEscaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return escaped.replace(regex, '<span class="highlight">$1</span>');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// ============ URLs ============
+function generateUrls() {
+  const urls = [];
+  const base = 'https://resultados.tse.jus.br/oficial/ele2026';
+  selectedCargos.forEach(cargoKey => {
+    const cfg = ELEICOES[cargoKey];
+    if (!cfg) return;
+    if (cfg.scope === 'br') {
+      if (selectedUfs.has('BR')) {
+        urls.push({ url: `${base}/${cfg.id}/dados/br/br-${cfg.cargo}-e${cfg.pad}-u.json`, name: `🇧🇷 Brasil - ${cfg.nome}`, uf: 'BR', cargo: cfg.nome, cargoKey, eleicaoId: cfg.id });
+      }
+    } else if (cfg.scope === 'df') {
+      if (selectedUfs.has('DF')) {
+        urls.push({ url: `${base}/${cfg.id}/dados/df/df-${cfg.cargo}-e${cfg.pad}-u.json`, name: `DF - ${cfg.nome}`, uf: 'DF', cargo: cfg.nome, cargoKey, eleicaoId: cfg.id });
+      }
+    } else {
+      UFS.forEach(uf => {
+        if (!selectedUfs.has(uf)) return;
+        const ufLower = uf.toLowerCase();
+        urls.push({ url: `${base}/${cfg.id}/dados/${ufLower}/${ufLower}-${cfg.cargo}-e${cfg.pad}-u.json`, name: `${uf} - ${cfg.nome}`, uf, cargo: cfg.nome, cargoKey, eleicaoId: cfg.id });
+      });
+    }
+  });
+  return urls;
+}
+
+function addLog(msg, type='info') {
+  const panel = document.getElementById('logPanel');
+  const cls = type === 'ok' ? 'log-ok' : type === 'err' ? 'log-err' : type === 'warn' ? 'log-warn' : 'log-info';
+  const icon = type === 'ok' ? '✓' : type === 'err' ? '✗' : type === 'warn' ? '⚠' : '•';
+  panel.innerHTML += `<div class="log-entry ${cls}">[${icon}] ${msg}</div>`;
+  panel.scrollTop = panel.scrollHeight;
+}
+
+async function fetchWithFallback(url, name) {
+  try {
+    const r = await fetch(url, { mode: 'cors' });
+    if (r.ok) return await r.json();
+    if (r.status === 404) throw new Error('404 - URL não existe');
+  } catch(e) {
+    if (e.message.includes('404')) throw e;
+  }
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    try {
+      const proxyUrl = CORS_PROXIES[i](url);
+      const r = await fetch(proxyUrl);
+      if (r.ok) {
+        const text = await r.text();
+        return JSON.parse(text);
+      }
+    } catch(e) { continue; }
+  }
+  throw new Error('Todos os métodos falharam');
+}
+
+function parseNumberBR(str) {
+  if (str == null) return 0;
+  if (typeof str === 'number') return str;
+  return parseFloat(String(str).replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+function formatNumber(n) {
+  return Number(n).toLocaleString('pt-BR');
+}
+
+function parseTSEData(json, meta) {
+  const result = {
+    ...meta,
+    infoHora: `${json.dg || ''} ${json.hg || ''}`.trim(),
+    secoes: json.s || {},
+    eleitorado: json.e || {},
+    votos: json.v || {},
+    candidates: []
+  };
+  (json.carg || []).forEach(cargo => {
+    (cargo.agr || []).forEach(agr => {
+      (agr.par || []).forEach(partido => {
+        (partido.cand || []).forEach(cand => {
+          const vice = (cand.vs || []).find(v => v.tp === 'v');
+          const fotoUrl = cand.sqcand ? 
+            `https://resultados.tse.jus.br/oficial/ele2026/${meta.eleicaoId}/fotos/${meta.uf.toLowerCase()}/${cand.sqcand}.jpeg` : null;
+          result.candidates.push({
+            numero: cand.n, nome: cand.nm, nomeUrna: cand.nmu,
+            partido: partido.sg, partidoNome: partido.nm,
+            coligacao: agr.com || partido.nm,
+            votos: parseNumberBR(cand.vap),
+            porcentagem: parseNumberBR(cand.pvap),
+            porcentagemRaw: cand.pvap,
+            vice: vice ? vice.nmu : null,
+            viceNome: vice ? vice.nm : null,
+            eleito: cand.e === 's', status: cand.st,
+            sqcand: cand.sqcand, fotoUrl
+          });
+        });
+      });
+    });
+  });
+  result.candidates.sort((a, b) => b.votos - a.votos);
+  return result;
+}
+
+// ============ CARREGAR ============
+async function loadAllData() { selectAll(); await loadSelected(); }
+
+async function loadSelected() {
+  const urls = generateUrls();
+  if (urls.length === 0) { alert('Selecione pelo menos um cargo e um estado'); return; }
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('progressPanel').classList.remove('hidden');
+  document.getElementById('logPanel').innerHTML = '';
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('cargoTabs').classList.add('hidden');
+  document.getElementById('candidateFilters').classList.add('hidden');
+  document.getElementById('partyTotals').classList.add('hidden');
+  document.getElementById('advancedAnalysis').classList.add('hidden');
+  addLog(`Iniciando carregamento de ${urls.length} fontes`, 'info');
+  allParsedData = [];
+  let completed = 0, failed = 0;
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < urls.length; i += BATCH_SIZE) {
+    const batch = urls.slice(i, i + BATCH_SIZE);
+    const promises = batch.map(async (meta) => {
+      try {
+        const json = await fetchWithFallback(meta.url, meta.name);
+        const parsed = parseTSEData(json, meta);
+        allParsedData.push(parsed);
+        addLog(`✓ ${meta.name} (${parsed.candidates.length} candidatos)`, 'ok');
+      } catch(e) {
+        failed++;
+        addLog(`✗ ${meta.name}: ${e.message}`, 'err');
+      } finally {
+        completed++;
+        updateProgress(completed, urls.length);
+      }
+    });
+    await Promise.all(promises);
+  }
+  document.getElementById('progressPanel').classList.add('hidden');
+  if (allParsedData.length === 0) {
+    document.getElementById('results').innerHTML = `
+      <div class="glass rounded-2xl p-8 text-center">
+        <p class="text-5xl mb-4">⚠️</p>
+        <p class="text-xl font-bold mb-2">Nenhuma fonte carregada</p>
+        <p class="text-slate-400 mb-4">Verifique sua conexão ou use o Modo Demo.</p>
+        <button onclick="loadDemoData()" class="btn-primary px-6 py-3 rounded-lg">🎭 Usar Modo Demo</button>
+      </div>`;
+    return;
+  }
+  document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('pt-BR');
+  renderCargoTabs();
+}
+
+function updateProgress(done, total) {
+  const pct = (done / total * 100).toFixed(0);
+  document.getElementById('progressText').textContent = `${done}/${total}`;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+// ============ DEMO ============
+function loadDemoData() {
+  document.getElementById('emptyState').classList.add('hidden');
+  allParsedData = [];
+  const demoPresBR = {
+    "ele":"6257","dg":"04/10/2026","hg":"22:20:45",
+    "s":{"ts":"499248","st":"498645","pst":"99,88","sa":"498604","psa":"100,00"},
+    "e":{"te":"158745502","c":"125128246","pc":"78,92","a":"33419706","pa":"21,08"},
+    "v":{"vv":"119160007","pvv":"100,00","vnom":"119160007","pvnom":"100,00","vb":"2298968","pvb":"1,84","vn":"3664031","pvn":"99,86"},
+    "carg":[{"cd":"1","nmn":"Presidente","agr":[
+      {"com":"PL","par":[{"sg":"PL","nm":"PARTIDO LIBERAL","cand":[{"n":"22","sqcand":"280002551544","nm":"FLAVIO NANTES BOLSONARO","nmu":"FLAVIO BOLSONARO","vap":"56074119","pvap":"47,06","e":"s","vs":[{"tp":"v","nmu":"ALFREDO GASPAR"}]}]}]},
+      {"com":"PT/PC do B/PV","par":[{"sg":"PT","nm":"PARTIDO DOS TRABALHADORES","cand":[{"n":"13","sqcand":"280002542548","nm":"LUIZ INÁCIO LULA DA SILVA","nmu":"LULA","vap":"53774336","pvap":"45,13","e":"n","vs":[{"tp":"v","nmu":"GERALDO ALCKMIN"}]}]}]},
+      {"com":"AVANTE","par":[{"sg":"AVANTE","nm":"AVANTE","cand":[{"n":"70","sqcand":"280002551547","nm":"AUGUSTO JORGE CURY","nmu":"ESCRITOR AUGUSTO CURY","vap":"3446132","pvap":"2,89","e":"n","vs":[{"tp":"v","nmu":"JÚLIO DELGADO"}]}]}]},
+      {"com":"MISSÃO","par":[{"sg":"MISSÃO","nm":"PARTIDO MISSÃO","cand":[{"n":"14","sqcand":"280002540694","nm":"RENAN ANTONIO FERREIRA DOS SANTOS","nmu":"RENAN SANTOS","vap":"2674712","pvap":"2,24","e":"n","vs":[{"tp":"v","nmu":"CORONEL MEDINA"}]}]}]},
+      {"com":"PSD","par":[{"sg":"PSD","nm":"PARTIDO SOCIAL DEMOCRÁTICO","cand":[{"n":"55","sqcand":"280002551932","nm":"RONALDO RAMOS CAIADO","nmu":"RONALDO CAIADO","vap":"2603816","pvap":"2,19","e":"n","vs":[{"tp":"v","nmu":"GILBERTO KASSAB"}]}]}]}
+    ]}]
+  };
+  const demoDepFedRJ = {
+    "ele":"6259","dg":"04/10/2026","hg":"22:20:45",
+    "s":{"ts":"30000","st":"29900","pst":"99,67","sa":"29900","psa":"100,00"},
+    "e":{"te":"13000000","c":"10000000","pc":"76,92","a":"3000000","pa":"23,08"},
+    "v":{"vv":"9000000","pvv":"100,00","vnom":"9000000","pvnom":"100,00","vb":"200000","pvb":"2,22","vn":"300000","pvn":"96,67"},
+    "carg":[{"cd":"6","nmn":"Deputado Federal","agr":[
+      {"com":"PL","par":[{"sg":"PL","nm":"PARTIDO LIBERAL","cand":[
+        {"n":"2222","sqcand":"250000001","nm":"ADALBERTO SOUZA","nmu":"ADALBERTO SOUZA","vap":"450000","pvap":"5,00","e":"s"},
+        {"n":"2233","sqcand":"250000002","nm":"BRUNO COSTA","nmu":"BRUNO COSTA","vap":"380000","pvap":"4,22","e":"s"},
+        {"n":"2244","sqcand":"250000003","nm":"CARLOS ALMEIDA","nmu":"CARLOS ALMEIDA","vap":"290000","pvap":"3,22","e":"n"},
+        {"n":"2255","sqcand":"250000020","nm":"DANIEL FERREIRA","nmu":"DANIEL FERREIRA","vap":"180000","pvap":"2,00","e":"n"}
+      ]}]},
+      {"com":"PT","par":[{"sg":"PT","nm":"PARTIDO DOS TRABALHADORES","cand":[
+        {"n":"1311","sqcand":"250000004","nm":"EDUARDO SILVA","nmu":"EDUARDO SILVA","vap":"420000","pvap":"4,67","e":"s"},
+        {"n":"1322","sqcand":"250000005","nm":"FERNANDA OLIVEIRA","nmu":"FERNANDA OLIVEIRA","vap":"310000","pvap":"3,44","e":"s"},
+        {"n":"1333","sqcand":"250000021","nm":"GABRIEL SANTOS","nmu":"GABRIEL SANTOS","vap":"150000","pvap":"1,67","e":"n"}
+      ]}]},
+      {"com":"PSOL","par":[{"sg":"PSOL","nm":"PSOL","cand":[
+        {"n":"5011","sqcand":"250000006","nm":"HELENA RODRIGUES","nmu":"HELENA RODRIGUES","vap":"280000","pvap":"3,11","e":"n"},
+        {"n":"5022","sqcand":"250000022","nm":"IGOR LIMA","nmu":"IGOR LIMA","vap":"120000","pvap":"1,33","e":"n"}
+      ]}]},
+      {"com":"PSDB","par":[{"sg":"PSDB","nm":"PSDB","cand":[
+        {"n":"4511","sqcand":"250000007","nm":"JOÃO PEREIRA","nmu":"JOÃO PEREIRA","vap":"260000","pvap":"2,89","e":"n"},
+        {"n":"4522","sqcand":"250000023","nm":"KAREN MARTINS","nmu":"KAREN MARTINS","vap":"140000","pvap":"1,56","e":"n"}
+      ]}]},
+      {"com":"MDB","par":[{"sg":"MDB","nm":"MDB","cand":[
+        {"n":"1511","sqcand":"250000008","nm":"LEANDRO GOMES","nmu":"LEANDRO GOMES","vap":"240000","pvap":"2,67","e":"n"},
+        {"n":"1522","sqcand":"250000024","nm":"MÁRCIA REIS","nmu":"MÁRCIA REIS","vap":"130000","pvap":"1,44","e":"n"}
+      ]}]},
+      {"com":"REPUBLICANOS","par":[{"sg":"REPUBLICANOS","nm":"REPUBLICANOS","cand":[{"n":"1011","sqcand":"250000009","nm":"NELSON CARVALHO","nmu":"NELSON CARVALHO","vap":"220000","pvap":"2,44","e":"n"}]}]},
+      {"com":"UNIÃO","par":[{"sg":"UNIÃO","nm":"UNIÃO","cand":[{"n":"4411","sqcand":"250000010","nm":"OTÁVIO MORAES","nmu":"OTÁVIO MORAES","vap":"200000","pvap":"2,22","e":"n"}]}]},
+      {"com":"PP","par":[{"sg":"PP","nm":"PP","cand":[{"n":"1111","sqcand":"250000011","nm":"PAULO RIBEIRO","nmu":"PAULO RIBEIRO","vap":"190000","pvap":"2,11","e":"n"}]}]},
+      {"com":"PDT","par":[{"sg":"PDT","nm":"PDT","cand":[{"n":"1211","sqcand":"250000012","nm":"RAFAEL NUNES","nmu":"RAFAEL NUNES","vap":"170000","pvap":"1,89","e":"n"}]}]},
+      {"com":"PSB","par":[{"sg":"PSB","nm":"PSB","cand":[{"n":"4011","sqcand":"250000013","nm":"SANDRA TEIXEIRA","nmu":"SANDRA TEIXEIRA","vap":"160000","pvap":"1,78","e":"n"}]}]}
+    ]}]
+  };
+  allParsedData.push(parseTSEData(demoPresBR, { url: 'demo', name: '🇧🇷 Brasil - Presidente', uf: 'BR', cargo: 'Presidente', cargoKey: 'presidente', eleicaoId: '6257' }));
+  allParsedData.push(parseTSEData(demoDepFedRJ, { url: 'demo', name: 'RJ - Deputado Federal', uf: 'RJ', cargo: 'Deputado Federal', cargoKey: 'depFederal', eleicaoId: '6259' }));
+  document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('pt-BR') + ' (DEMO)';
+  renderCargoTabs();
+}
+
+// ============ COLAR JSON ============
+function openPasteModal() { document.getElementById('pasteModal').classList.remove('hidden'); }
+function closePasteModal() {
+  document.getElementById('pasteModal').classList.add('hidden');
+  document.getElementById('pasteJson').value = '';
+  document.getElementById('pasteName').value = '';
+  document.getElementById('pasteUf').value = '';
+}
+function processPastedJson() {
+  const raw = document.getElementById('pasteJson').value.trim();
+  const name = document.getElementById('pasteName').value.trim() || 'JSON Colado';
+  const uf = document.getElementById('pasteUf').value.trim().toUpperCase() || 'CUSTOM';
+  if (!raw) { alert('Cole o JSON'); return; }
+  try {
+    const json = JSON.parse(raw);
+    const meta = { url: 'paste', name, uf, cargo: (json.carg && json.carg[0] && json.carg[0].nmn) || 'Custom', cargoKey: 'custom', eleicaoId: json.ele || '6257' };
+    allParsedData.push(parseTSEData(json, meta));
+    closePasteModal();
+    document.getElementById('emptyState').classList.add('hidden');
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('pt-BR');
+    renderCargoTabs();
+  } catch(e) { alert('JSON inválido: ' + e.message); }
+}
+
+// ============ EXPORTAÇÃO ============
+function downloadJSON(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportAllData() {
+  if (allParsedData.length === 0) { alert('Nenhum dado carregado para exportar'); return; }
+  const exportData = {
+    metadata: {
+      versao: VERSION,
+      autor: AUTHOR,
+      email: 'walneyk@hotmail.com',
+      dataExportacao: new Date().toISOString(),
+      fonte: 'API Oficial TSE - resultados.tse.jus.br',
+      aviso: 'Projeto independente sem vínculo com TSE ou Justiça Eleitoral'
+    },
+    totalFontes: allParsedData.length,
+    totalCandidatos: allParsedData.reduce((s, d) => s + d.candidates.length, 0),
+    dados: allParsedData.map(d => ({
+      fonte: d.name,
+      uf: d.uf,
+      cargo: d.cargo,
+      atualizadoEm: d.infoHora,
+      estatisticas: {
+        secoes: d.secoes,
+        eleitorado: d.eleitorado,
+        votos: d.votos
+      },
+      candidatos: d.candidates
+    }))
+  };
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  downloadJSON(exportData, `eleicoes2026_completo_${ts}.json`);
+}
+
+function exportCurrentList() {
+  const base = getBaseCandidates();
+  const filtered = applyFilters(base);
+  if (filtered.length === 0) { alert('Nenhum candidato para exportar'); return; }
+  const exportData = {
+    metadata: {
+      versao: VERSION,
+      autor: AUTHOR,
+      dataExportacao: new Date().toISOString(),
+      cargo: currentCargo,
+      uf: currentUf,
+      filtros: { status: statusFilter, busca: searchText, ordenacao: sortOrder },
+      total: filtered.length
+    },
+    candidatos: filtered
+  };
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const ufLabel = currentUf === 'ALL' ? 'todos' : currentUf.toLowerCase();
+  const cargoLabel = currentCargo.toLowerCase().replace(/\s+/g, '_');
+  downloadJSON(exportData, `${cargoLabel}_${ufLabel}_${ts}.json`);
+}
+
+function exportPartyData() {
+  const base = getBaseCandidates();
+  const parties = calculatePartyTotals(base);
+  if (parties.length === 0) { alert('Nenhum dado para exportar'); return; }
+  const exportData = {
+    metadata: {
+      versao: VERSION,
+      autor: AUTHOR,
+      dataExportacao: new Date().toISOString(),
+      cargo: currentCargo,
+      uf: currentUf,
+      totalPartidos: parties.length
+    },
+    partidos: parties
+  };
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  downloadJSON(exportData, `partidos_${currentCargo.toLowerCase().replace(/\s+/g,'_')}_${ts}.json`);
+}
+
+function exportAnalysis() {
+  const base = getBaseCandidates();
+  const parties = calculatePartyTotals(base);
+  const regionData = calculateRegionData();
+  const top10 = [...base].sort((a,b) => b.votos - a.votos).slice(0, 10);
+  const exportData = {
+    metadata: {
+      versao: VERSION,
+      autor: AUTHOR,
+      dataExportacao: new Date().toISOString(),
+      cargo: currentCargo,
+      uf: currentUf
+    },
+    resumo: {
+      totalCandidatos: base.length,
+      totalEleitos: base.filter(c => c.eleito).length,
+      totalPartidos: parties.length,
+      totalVotos: base.reduce((s,c) => s + c.votos, 0)
+    },
+    top10Candidatos: top10,
+    partidos: parties,
+    regioes: regionData
+  };
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  downloadJSON(exportData, `analise_${currentCargo.toLowerCase().replace(/\s+/g,'_')}_${ts}.json`);
+}
+
+// ============ RENDER ============
+function renderCargoTabs() {
+  chartInstances.forEach(c => c.destroy());
+  chartInstances = [];
+  if (partyChartInstance) { partyChartInstance.destroy(); partyChartInstance = null; }
+  if (pieChartInstance) { pieChartInstance.destroy(); pieChartInstance = null; }
+  if (regionChartInstance) { regionChartInstance.destroy(); regionChartInstance = null; }
+  const cargos = [...new Set(allParsedData.map(d => d.cargo))];
+  const ufs = [...new Set(allParsedData.map(d => d.uf))];
+  if (!currentCargo || !cargos.includes(currentCargo)) currentCargo = cargos[0];
+  if (!ufs.includes(currentUf)) currentUf = 'ALL';
+  const tabs = document.getElementById('cargoTabs');
+  tabs.classList.remove('hidden');
+  tabs.innerHTML = `
+    <div class="glass rounded-xl p-4">
+      <p class="text-xs text-slate-400 mb-2 font-semibold">CARGO</p>
+      <div class="flex flex-wrap gap-2">
+        ${cargos.map(c => `
+          <button onclick="selectCargo('${c.replace(/'/g,"\\'")}')" 
+                  class="px-4 py-2 rounded-full transition-all text-sm ${c === currentCargo ? 'tab-active' : 'glass text-slate-300'}">
+            ${c}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+    <div class="glass rounded-xl p-4">
+      <p class="text-xs text-slate-400 mb-2 font-semibold">ESTADO</p>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="selectUf('ALL')" class="px-3 py-1 rounded-lg transition-all text-sm ${currentUf === 'ALL' ? 'tab-active' : 'glass text-slate-300'}">Todos</button>
+        ${ufs.filter(u => u !== 'CUSTOM').sort().map(u => `
+          <button onclick="selectUf('${u}')" class="px-3 py-1 rounded-lg transition-all text-sm ${currentUf === u ? 'tab-active' : 'glass text-slate-300'}">
+            ${u === 'BR' ? '🇧🇷 BR' : u}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  document.getElementById('candidateFilters').classList.remove('hidden');
+  document.getElementById('advancedAnalysis').classList.remove('hidden');
+  renderInitialChips();
+  renderResults();
+}
+
+function selectCargo(c) { currentCargo = c; renderCargoTabs(); }
+function selectUf(u) { currentUf = u; renderCargoTabs(); }
+
+function renderResults() {
+  chartInstances.forEach(c => c.destroy());
+  chartInstances = [];
+  const baseCandidates = getBaseCandidates();
+  const filtered = applyFilters(baseCandidates);
+  document.getElementById('candidateCount').textContent = `(${filtered.length} de ${baseCandidates.length} candidatos)`;
+  renderPartyTotals(baseCandidates);
+  renderAdvancedAnalysis(baseCandidates);
+  renderInitialChips();
+  const container = document.getElementById('results');
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="glass rounded-2xl p-8 text-center">
+        <p class="text-5xl mb-4">🔍</p>
+        <p class="text-xl font-bold mb-2">Nenhum candidato encontrado</p>
+        <p class="text-slate-400">Tente ajustar os filtros</p>
+      </div>`;
+    return;
+  }
+  if (groupBy === 'initial') renderGroupedByInitial(filtered, container);
+  else renderFlatList(filtered, container);
+}
+
+function renderFlatList(candidates, container) {
+  const totalValidos = candidates.reduce((s, c) => s + c.votos, 0);
+  container.innerHTML = `
+    <div class="glass rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h4 class="font-bold text-slate-300">📋 Lista de Candidatos (${candidates.length})</h4>
+        <button onclick="exportCurrentList()" class="export-btn px-3 py-1.5 rounded-lg text-xs font-bold">
+          💾 Exportar Lista (JSON)
+        </button>
+      </div>
+      <div class="space-y-2 scroll-area max-h-[800px] overflow-y-auto pr-2">
+        ${candidates.map((c, i) => renderCandidateRow(c, i, totalValidos)).join('')}
+      </div>
+    </div>`;
+}
+
+function renderGroupedByInitial(candidates, container) {
+  const groups = {};
+  candidates.forEach(c => {
+    const ch = c.nomeUrna.charAt(0).toUpperCase();
+    const key = /[A-Z]/.test(ch) ? ch : '#';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(c);
+  });
+  const letters = Object.keys(groups).sort((a, b) => {
+    if (a === '#') return 1;
+    if (b === '#') return -1;
+    return a.localeCompare(b);
+  });
+  let html = `
+    <div class="glass rounded-2xl p-4 mb-4 flex items-center justify-between flex-wrap gap-2">
+      <p class="text-sm text-slate-300">📦 ${candidates.length} candidatos agrupados em ${letters.length} letras</p>
+      <button onclick="exportCurrentList()" class="export-btn px-3 py-1.5 rounded-lg text-xs font-bold">
+        💾 Exportar Tudo (JSON)
+      </button>
+    </div>`;
+  letters.forEach(letter => {
+    const list = groups[letter];
+    const totalValidos = list.reduce((s, c) => s + c.votos, 0);
+    const label = letter === '#' ? '# / OUTROS' : letter;
+    html += `
+      <div class="glass rounded-2xl p-5">
+        <div class="initial-separator pl-4 py-2 mb-4 flex items-center justify-between">
+          <div>
+            <p class="text-3xl font-black gradient-green">${label}</p>
+            <p class="text-xs text-slate-400">${list.length} candidato(s)</p>
+          </div>
+        </div>
+        <div class="space-y-2">
+          ${list.map((c, i) => renderCandidateRow(c, i, totalValidos)).join('')}
+        </div>
+      </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function renderCandidateRow(c, i, total) {
+  const pct = total > 0 ? (c.votos / total * 100) : 0;
+  const isWinner = i === 0;
+  const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span class="text-slate-500">#${i+1}</span>`;
+  const fotoHtml = c.fotoUrl ? 
+    `<img src="${c.fotoUrl}" alt="${escapeHtml(c.nomeUrna)}" class="candidate-photo" onerror="this.outerHTML='<div class=\\'candidate-photo-placeholder\\'>👤</div>'">` :
+    `<div class="candidate-photo-placeholder">👤</div>`;
+  const nomeDisplay = highlightText(c.nomeUrna, searchText);
+  const partidoDisplay = highlightText(c.partido, searchText);
+  const numeroDisplay = highlightText(c.numero, searchText);
+  return `
+    <div class="candidate-row glass rounded-lg p-3 ${isWinner ? 'border-l-4 border-amber-500' : ''} ${c.eleito ? 'bg-green-500/5' : ''}">
+      <div class="flex items-center gap-3">
+        <div class="text-xl w-8 text-center font-bold ${isWinner ? 'text-amber-400' : ''}">${medal}</div>
+        ${fotoHtml}
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded text-xs font-bold">${numeroDisplay}</span>
+            <span class="font-bold truncate ${isWinner ? 'text-amber-300' : ''}">${nomeDisplay}</span>
+            ${c.eleito ? '<span class="elected-badge text-white px-2 py-0.5 rounded text-xs font-bold">✓ ELEITO</span>' : ''}
+          </div>
+          <div class="text-xs text-slate-400 mt-1">
+            ${partidoDisplay} • ${escapeHtml(c.coligacao)}
+            ${c.vice ? ` • Vice: <span class="text-slate-300">${escapeHtml(c.vice)}</span>` : ''}
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-lg font-black ${isWinner ? 'gradient-text' : ''}">${c.porcentagemRaw || c.porcentagem.toFixed(2).replace('.',',')}%</p>
+          <p class="text-xs text-slate-400">${formatNumber(c.votos)}</p>
+        </div>
+      </div>
+      <div class="mt-2">
+        <div class="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+          <div class="bar-fill h-full" style="width: ${pct}%"></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============ TOTALIZADORES PARTIDO ============
+function calculatePartyTotals(candidates) {
+  const parties = {};
+  candidates.forEach(c => {
+    if (!parties[c.partido]) {
+      parties[c.partido] = { sigla: c.partido, nome: c.partidoNome, totalVotos: 0, totalCandidatos: 0, eleitos: 0, candidatos: [] };
+    }
+    parties[c.partido].totalVotos += c.votos;
+    parties[c.partido].totalCandidatos++;
+    if (c.eleito) parties[c.partido].eleitos++;
+    parties[c.partido].candidatos.push(c);
+  });
+  return Object.values(parties);
+}
+
+function renderPartyTotals(candidates) {
+  const panel = document.getElementById('partyTotals');
+  panel.classList.remove('hidden');
+  const parties = calculatePartyTotals(candidates);
+  parties.sort((a, b) => {
+    if (partySortOrder === 'votes') return b.totalVotos - a.totalVotos;
+    if (partySortOrder === 'elected') return b.eleitos - a.eleitos || b.totalVotos - a.totalVotos;
+    if (partySortOrder === 'candidates') return b.totalCandidatos - a.totalCandidatos || b.totalVotos - a.totalVotos;
+    return 0;
+  });
+  const totalVotes = parties.reduce((s, p) => s + p.totalVotos, 0);
+  const maxVotes = Math.max(...parties.map(p => p.totalVotos), 1);
+  const cardsContainer = document.getElementById('partyCards');
+  cardsContainer.innerHTML = parties.map(p => {
+    const pctVotos = totalVotes > 0 ? (p.totalVotos / totalVotes * 100) : 0;
+    const barWidth = (p.totalVotos / maxVotes * 100);
+    return `
+      <div class="party-card glass rounded-xl p-4 border border-white/10">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <p class="text-2xl font-black gradient-text">${escapeHtml(p.sigla)}</p>
+            <p class="text-xs text-slate-400 truncate max-w-[180px]">${escapeHtml(p.nome)}</p>
+          </div>
+          ${p.eleitos > 0 ? `<span class="elected-badge text-white px-2 py-1 rounded text-xs font-bold">${p.eleitos} eleito${p.eleitos > 1 ? 's' : ''}</span>` : ''}
+        </div>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between"><span class="text-slate-400">Votos:</span><span class="font-bold">${formatNumber(p.totalVotos)}</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">% do total:</span><span class="font-bold text-amber-400">${pctVotos.toFixed(2).replace('.',',')}%</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Candidatos:</span><span class="font-bold">${p.totalCandidatos}</span></div>
+        </div>
+        <div class="mt-3">
+          <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+            <div class="party-bar bg-gradient-to-r from-green-600 to-amber-400 h-full" style="width: ${barWidth}%"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  renderPartyChart(parties.slice(0, 15));
+}
+
+function renderPartyChart(parties) {
+  const canvas = document.getElementById('partyChart');
+  if (!canvas) return;
+  if (partyChartInstance) partyChartInstance.destroy();
+  const ctx = canvas.getContext('2d');
+  partyChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: parties.map(p => p.sigla),
+      datasets: [
+        { label: 'Total de Votos', data: parties.map(p => p.totalVotos), backgroundColor: 'rgba(0,151,57,0.7)', borderColor: 'rgba(0,151,57,1)', borderWidth: 1, borderRadius: 4, yAxisID: 'y' },
+        { label: 'Eleitos', data: parties.map(p => p.eleitos), backgroundColor: 'rgba(255,223,0,0.8)', borderColor: 'rgba(255,223,0,1)', borderWidth: 1, borderRadius: 4, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#0f172a', font: { weight: 'bold' } } },
+        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label === 'Total de Votos' ? `Votos: ${formatNumber(ctx.parsed.y)}` : `Eleitos: ${ctx.parsed.y}` } }
+      },
+      scales: {
+        y: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#64748b', callback: v => formatNumber(v) }, grid: { color: 'rgba(0,0,0,0.05)' }, title: { display: true, text: 'Votos', color: '#009739', font: { weight: 'bold' } } },
+        y1: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#FFB800', stepSize: 1 }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Eleitos', color: '#FFB800', font: { weight: 'bold' } } },
+        x: { ticks: { color: '#0f172a', font: { weight: 'bold' } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+// ============ ANÁLISES AVANÇADAS ============
+function getRegionOfUf(uf) {
+  for (const [nome, data] of Object.entries(REGIOES)) {
+    if (data.ufs.includes(uf)) return nome;
+  }
+  return 'Nacional';
+}
+
+function calculateRegionData() {
+  const base = getBaseCandidates();
+  const regions = {};
+  Object.keys(REGIOES).forEach(r => regions[r] = { votos: 0, candidatos: 0, eleitos: 0 });
+  regions['Nacional'] = { votos: 0, candidatos: 0, eleitos: 0 };
+  base.forEach(c => {
+    const region = getRegionOfUf(allParsedData.find(d => d.candidates.includes(c))?.uf || 'BR');
+    if (!regions[region]) regions[region] = { votos: 0, candidatos: 0, eleitos: 0 };
+    regions[region].votos += c.votos;
+    regions[region].candidatos++;
+    if (c.eleito) regions[region].eleitos++;
+  });
+  return regions;
+}
+
+function renderAdvancedAnalysis(baseCandidates) {
+  const panel = document.getElementById('advancedAnalysis');
+  panel.classList.remove('hidden');
+
+  const totalSources = allParsedData.filter(d => d.cargo === currentCargo && (currentUf === 'ALL' || d.uf === currentUf)).length;
+  const totalCandidates = baseCandidates.length;
+  const totalElected = baseCandidates.filter(c => c.eleito).length;
+  const parties = calculatePartyTotals(baseCandidates);
+  const totalVotes = baseCandidates.reduce((s, c) => s + c.votos, 0);
+
+  document.getElementById('anTotalSources').textContent = totalSources;
+  document.getElementById('anTotalCandidates').textContent = formatNumber(totalCandidates);
+  document.getElementById('anTotalElected').textContent = formatNumber(totalElected);
+  document.getElementById('anTotalParties').textContent = parties.length;
+  document.getElementById('anTotalVotes').textContent = formatNumber(totalVotes);
+
+  // Pizza de eleitos por partido
+  renderElectedPieChart(parties);
+  // Votos por região
+  renderRegionChart();
+  // Top 10
+  renderTop10(baseCandidates);
+}
+
+function renderElectedPieChart(parties) {
+  const canvas = document.getElementById('electedPieChart');
+  if (!canvas) return;
+  if (pieChartInstance) pieChartInstance.destroy();
+  const elected = parties.filter(p => p.eleitos > 0).sort((a,b) => b.eleitos - a.eleitos).slice(0, 10);
+  if (elected.length === 0) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '14px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('Nenhum eleito ainda', canvas.width/2, canvas.height/2);
+    return;
+  }
+  const colors = ['#009739', '#FFDF00', '#002776', '#00B847', '#FFB800', '#004DC8', '#4ade80', '#fbbf24', '#60a5fa', '#94a3b8'];
+  pieChartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: elected.map(p => p.sigla),
+      datasets: [{
+        data: elected.map(p => p.eleitos),
+        backgroundColor: colors,
+        borderColor: '#fff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#0f172a', font: { weight: 'bold', size: 11 } } },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed} eleito(s)` } }
+      }
+    }
+  });
+}
+
+function renderRegionChart() {
+  const canvas = document.getElementById('regionChart');
+  if (!canvas) return;
+  if (regionChartInstance) regionChartInstance.destroy();
+  const regionData = calculateRegionData();
+  const regions = Object.entries(regionData).filter(([k,v]) => v.candidatos > 0 && k !== 'Nacional');
+  if (regions.length === 0) return;
+  const colors = { 'Norte': '#009739', 'Nordeste': '#FFDF00', 'Centro-Oeste': '#002776', 'Sudeste': '#00B847', 'Sul': '#FFB800' };
+  regionChartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: regions.map(([r]) => r),
+      datasets: [
+        { label: 'Votos', data: regions.map(([,d]) => d.votos), backgroundColor: regions.map(([r]) => colors[r] || '#009739'), borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => `Votos: ${formatNumber(ctx.parsed.y)}` } }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { color: '#64748b', callback: v => formatNumber(v) }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { ticks: { color: '#0f172a', font: { weight: 'bold' } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderTop10(candidates) {
+  const container = document.getElementById('top10List');
+  const top10 = [...candidates].sort((a,b) => b.votos - a.votos).slice(0, 10);
+  if (top10.length === 0) {
+    container.innerHTML = '<p class="text-sm text-slate-500">Sem dados</p>';
+    return;
+  }
+  const maxVotes = top10[0].votos;
+  container.innerHTML = top10.map((c, i) => {
+    const pct = maxVotes > 0 ? (c.votos / maxVotes * 100) : 0;
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span class="text-slate-500 font-bold">#${i+1}</span>`;
+    return `
+      <div class="flex items-center gap-3 p-2 rounded hover:bg-white/5">
+        <div class="text-xl w-8 text-center">${medal}</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded text-xs font-bold">${c.numero}</span>
+            <span class="font-bold truncate text-slate-800">${escapeHtml(c.nomeUrna)}</span>
+            <span class="text-xs text-slate-500">${escapeHtml(c.partido)}</span>
+            ${c.eleito ? '<span class="elected-badge text-white px-2 py-0.5 rounded text-xs font-bold">✓</span>' : ''}
+          </div>
+          <div class="mt-1 w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-green-600 to-amber-400" style="width: ${pct}%"></div>
+          </div>
+        </div>
+        <div class="text-right text-slate-800">
+          <p class="font-bold text-sm">${formatNumber(c.votos)}</p>
+          <p class="text-xs text-slate-500">${c.porcentagemRaw || c.porcentagem.toFixed(2).replace('.',',')}%</p>
+        </div>
+      </div>`;
+  }).join('');
+}
+</script>
+
+</body>
+</html>
